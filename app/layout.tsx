@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Creative Intelligence",
-  description: "AI-assisted demo data generator for mobile ad creative analysis.",
+  description: "Smadex creative intelligence copilot for mobile advertisers.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
