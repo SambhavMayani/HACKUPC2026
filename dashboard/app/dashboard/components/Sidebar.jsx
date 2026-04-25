@@ -39,7 +39,7 @@ export default function Sidebar({ active, onNavigate, account, insight, onSwitch
         <div className="logo-icon">AT</div>
         <div>
           <h1>ADtonomy</h1>
-          <span>by Smadex</span>
+          <span>ADtonomy</span>
         </div>
       </div>
 

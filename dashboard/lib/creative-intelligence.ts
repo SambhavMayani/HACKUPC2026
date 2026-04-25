@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import Papa from "papaparse";
 
-const datasetDir = path.join(process.cwd(), "Smadex_Creative_Intelligence_Dataset_FULL");
+const datasetDir = path.join(process.cwd(), "ADtonomy_Creative_Intelligence_Dataset_FULL");
 
 type CreativeSummaryRow = Record<string, string>;
 type CampaignRow = Record<string, string>;

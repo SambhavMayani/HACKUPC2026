@@ -14,7 +14,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
-  const perPage = viewMode === 'grid' ? 12 : 20;
+  const tablePageSize = 20;
 
   const verticals = useMemo(() => [...new Set(data.creatives.map(c => c.vertical))].sort(), [data]);
   const formats = useMemo(() => [...new Set(data.creatives.map(c => c.format))].sort(), [data]);
@@ -59,8 +59,8 @@ export default function Explorer({ data, campaignId, creativeId }) {
     return list;
   }, [data, vertical, format, campaign, status, search, sortBy, sortDir]);
 
-  const pageCount = Math.ceil(filtered.length / perPage);
-  const pageItems = filtered.slice(page * perPage, (page + 1) * perPage);
+  const pageCount = Math.ceil(filtered.length / tablePageSize);
+  const tableItems = filtered.slice(page * tablePageSize, (page + 1) * tablePageSize);
 
   const handleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -113,7 +113,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
 
       {viewMode === 'grid' ? (
         <div className="creatives-grid">
-          {pageItems.map(c => (
+          {filtered.map(c => (
             <div key={c.id} className="creative-card" onClick={() => setSelected(c)}>
               <img src={`/api/assets/${c.asset_file}`} alt={c.headline} loading="lazy" />
               <div className="info">
@@ -152,7 +152,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
               </tr>
             </thead>
             <tbody>
-              {pageItems.map(c => (
+              {tableItems.map(c => (
                 <tr key={c.id} onClick={() => setSelected(c)} style={{ cursor: 'pointer' }}>
                   <td><img src={`/api/assets/${c.asset_file}`} alt="" style={{ width: 44, height: 33, objectFit: 'cover', borderRadius: 6 }} /></td>
                   <td>
@@ -178,7 +178,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
         </div>
       )}
 
-      {pageCount > 1 && (
+      {viewMode === 'table' && pageCount > 1 && (
         <div className="pagination">
           <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</button>
           <span>Page {page + 1} of {pageCount}</span>

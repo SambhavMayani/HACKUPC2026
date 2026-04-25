@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-const datasetRoot = path.join(process.cwd(), "Smadex_Creative_Intelligence_Dataset_FULL");
+const datasetRoot = path.join(process.cwd(), "ADtonomy_Creative_Intelligence_Dataset_FULL");
 
 export async function GET(
   _: Request,

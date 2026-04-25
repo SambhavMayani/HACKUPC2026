@@ -1,4 +1,4 @@
-# Smadex Creative Intelligence Challenge Dataset
+# ADtonomy Creative Intelligence Challenge Dataset
 
 This is a **fully synthetic** ad-tech dataset created for a hackathon-style "Creative Intelligence" challenge.
 It is intentionally **large enough to feel real**, but still **bounded enough for university teams** to understand in a few minutes.

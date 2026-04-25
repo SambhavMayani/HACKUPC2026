@@ -78,7 +78,7 @@ export default function AccountPicker({ advertisers, insights, onSelect }) {
           })}
         </div>
 
-        <p className="account-powered">Smadex ADtonomy Platform</p>
+        <p className="account-powered">ADtonomy Platform</p>
       </div>
     </div>
   );
