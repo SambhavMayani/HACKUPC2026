@@ -7,13 +7,13 @@ const verticalIcons = {
 
 export default function Sidebar({ active, onNavigate, account, insight, onSwitchAccount }) {
   const items = [
-    { id: 'overview', icon: '📊', label: 'My Dashboard' },
-    { id: 'explorer', icon: '🔍', label: 'My Creatives' },
-    { id: 'fatigue', icon: '⏳', label: 'Fatigue Alerts' },
-    { id: 'explainability', icon: '💡', label: 'Why It Works' },
-    { id: 'recommendations', icon: '🎯', label: 'What To Do Next' },
-    { id: 'clusters', icon: '🧩', label: 'Creative Groups' },
-    { id: 'copilot', icon: '🤖', label: 'Ask AI' },
+    { id: 'overview', icon: '', label: 'Dashboard' },
+    { id: 'explorer', icon: '', label: 'Creatives' },
+    { id: 'fatigue', icon: '', label: 'Fatigue' },
+    { id: 'explainability', icon: '', label: 'Why It Works' },
+    { id: 'recommendations', icon: '', label: 'Recommendations' },
+    { id: 'clusters', icon: '', label: 'Creative Groups' },
+    { id: 'copilot', icon: '', label: 'AI Assistance' },
   ];
 
   return (

@@ -218,6 +218,13 @@ export default function Clusters({ data }) {
                   </span>
                 ))}
               </div>
+              {/* LLM Insight */}
+              {(cl.llmWhy || cl.llmCommon) && (
+                <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8, background: 'rgba(124,108,240,0.04)', borderLeft: '2px solid var(--accent)' }}>
+                  {cl.llmWhy && <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>💡 {cl.llmWhy}</div>}
+                  {cl.llmCommon && <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>🔗 {cl.llmCommon}</div>}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -329,6 +336,13 @@ export default function Clusters({ data }) {
               <span>{active.myCount} creatives</span>
             </div>
           </div>
+          {/* LLM Cluster Insight */}
+          {(active.llmWhy || active.llmCommon) && (
+            <div style={{ margin: '0 16px 12px', padding: '12px 16px', borderRadius: 10, background: 'linear-gradient(135deg, rgba(124,108,240,0.06), rgba(0,210,160,0.04))', border: '1px solid var(--border)' }}>
+              {active.llmWhy && <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 500 }}>💡 {active.llmWhy}</div>}
+              {active.llmCommon && <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 4 }}>🔗 {active.llmCommon}</div>}
+            </div>
+          )}
           {/* Status breakdown */}
           <div style={{ display: 'flex', gap: 12, padding: '0 16px 12px', flexWrap: 'wrap' }}>
             {Object.entries(active.statuses).map(([s, count]) => count > 0 && (

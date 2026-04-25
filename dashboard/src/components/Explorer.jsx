@@ -169,7 +169,7 @@ export default function Explorer({ data }) {
 
             {/* Header */}
             <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap' }}>
-              <img src={`/${selected.asset_file}`} alt="" style={{ width: 200, height: 160, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }} />
+              <img src={`/${selected.asset_file}`} alt="" style={{ width: 180, maxHeight: 320, borderRadius: 12, objectFit: 'contain', border: '1px solid var(--border)', background: 'var(--bg-secondary)' }} />
               <div style={{ flex: 1, minWidth: 280 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                   <span className={`status-badge ${selected.status}`}>{statusLabel(selected.status)}</span>

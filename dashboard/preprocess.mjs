@@ -726,6 +726,75 @@ for (const c of allCrs) {
 
 console.log(`ML Clustering done: combined(k=${mlClusters.combined.k}, sil=${mlClusters.combined.silhouette}), perf(k=${mlClusters.performance.k}, sil=${mlClusters.performance.silhouette}), visual(k=${mlClusters.visual.k}, sil=${mlClusters.visual.silhouette})`);
 
+// ---- LLM Cluster Descriptions ----
+const LLM_API = 'https://ai.hackclub.com/proxy/v1/chat/completions';
+const LLM_KEY = 'sk-hc-v1-b3c463038e7e43afaef110e4a4fa548fa28d333ac9174e619f1e1feed58e5d51';
+
+async function generateClusterDescriptions(modelData, modelName) {
+  console.log(`  Generating LLM descriptions for ${modelName}...`);
+
+  const clusterSummaries = modelData.clusters.map(cl => {
+    const topPct = ((cl.statusBreakdown.top_performer || 0) / cl.size * 100).toFixed(0);
+    const fatiguedPct = ((cl.statusBreakdown.fatigued || 0) / cl.size * 100).toFixed(0);
+    const underPct = ((cl.statusBreakdown.underperformer || 0) / cl.size * 100).toFixed(0);
+    const traits = Object.entries(cl.dominantTraits).map(([k, v]) => `${k}=${v}`).join(', ');
+    const centroidHighlights = Object.entries(cl.centroid)
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+      .slice(0, 5)
+      .map(([k, v]) => `${FEATURE_LABELS[k] || k}: ${v > 0 ? 'high' : 'low'} (z=${v.toFixed(2)})`)
+      .join(', ');
+    return `Cluster ${cl.id} "${cl.label}" (${cl.size} creatives, avg perf score ${(cl.avgPerf * 100).toFixed(0)}/100, ROAS ${cl.avgRoas.toFixed(2)}x): ${topPct}% top performers, ${fatiguedPct}% fatigued, ${underPct}% underperformers. Dominant traits: ${traits}. Key centroid features: ${centroidHighlights}.`;
+  }).join('\n');
+
+  const prompt = `You are an ad-tech creative analyst. Below are clusters discovered by K-Means on ad creative data.
+
+For EACH cluster, write exactly ONE JSON object with two fields:
+- "why": A single concise sentence explaining why this cluster performs the way it does (good or bad).
+- "common": A single concise sentence describing what these creatives have in common visually/structurally.
+
+${clusterSummaries}
+
+Respond ONLY with a JSON array of objects in cluster order, no other text. Example format:
+[{"why":"...","common":"..."},{"why":"...","common":"..."}]`;
+
+  try {
+    const res = await fetch(LLM_API, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LLM_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+      }),
+    });
+    const json = await res.json();
+    const raw = json.choices?.[0]?.message?.content || '';
+    // Extract JSON from response (handle markdown code blocks)
+    const jsonMatch = raw.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const descriptions = JSON.parse(jsonMatch[0]);
+      modelData.clusters.forEach((cl, i) => {
+        if (descriptions[i]) {
+          cl.llmWhy = descriptions[i].why || '';
+          cl.llmCommon = descriptions[i].common || '';
+        }
+      });
+      console.log(`    ✅ Got ${descriptions.length} descriptions`);
+    } else {
+      console.log(`    ⚠️ Could not parse LLM response`);
+    }
+  } catch (err) {
+    console.log(`    ⚠️ LLM call failed: ${err.message}`);
+  }
+}
+
+// Generate descriptions for all models
+await Promise.all([
+  generateClusterDescriptions(mlClusters.combined, 'Combined'),
+  generateClusterDescriptions(mlClusters.performance, 'Performance'),
+  generateClusterDescriptions(mlClusters.visual, 'Visual DNA'),
+]);
+
 // ---- Campaign detail ----
 const campaignMap = {};
 for (const c of campaignSummary) {
