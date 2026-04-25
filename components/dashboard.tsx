@@ -58,12 +58,36 @@ type TraitInsight = {
 };
 
 type PreviewCreative = {
+  creativeId: string;
+  campaignId: string;
+  campaignLabel: string;
   assetFile: string;
   headline: string;
   subhead: string;
   advertiser: string;
   appName: string;
+  vertical: string;
   format: string;
+  status: string;
+  theme: string;
+  hookType: string;
+  ctaText: string;
+  dominantColor: string;
+  emotionalTone: string;
+  language: string;
+  launchDate: string;
+  textDensity: number;
+  readabilityScore: number;
+  brandVisibilityScore: number;
+  clutterScore: number;
+  noveltyScore: number;
+};
+
+type MarkdownActions = {
+  onPreviewCreative: (creativeId: string) => void;
+  onApplyCampaign: (campaignId: string) => void;
+  hasCreative: (creativeId: string) => boolean;
+  hasCampaign: (campaignId: string) => boolean;
 };
 
 const initialFilters: Filters = {
@@ -620,24 +644,107 @@ function CreativePreviewModal({
           <img src={`/api/assets/${creative.assetFile}`} alt={creative.headline} />
         </div>
         <div className="preview-meta">
+          <span>Creative {creative.creativeId}</span>
+          <span>Campaign {creative.campaignId}</span>
           <span>{creative.format}</span>
-          {creative.subhead ? <span>{creative.subhead}</span> : null}
+          <span>{creative.vertical}</span>
+          <span>{creative.status}</span>
+        </div>
+        <div className="preview-copy">
+          <div>
+            <span>Headline</span>
+            <strong>{creative.headline}</strong>
+          </div>
+          {creative.subhead ? (
+            <div>
+              <span>Subhead</span>
+              <strong>{creative.subhead}</strong>
+            </div>
+          ) : null}
+          <div>
+            <span>CTA</span>
+            <strong>{creative.ctaText}</strong>
+          </div>
+          <div>
+            <span>Theme / Hook</span>
+            <strong>{creative.theme} / {creative.hookType}</strong>
+          </div>
+          <div>
+            <span>Tone / Color</span>
+            <strong>{creative.emotionalTone} / {creative.dominantColor}</strong>
+          </div>
+          <div>
+            <span>Text signals</span>
+            <strong>
+              {creative.language.toUpperCase()} · readability {creative.readabilityScore.toFixed(2)} · text density {creative.textDensity.toFixed(2)}
+            </strong>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function renderInlineMarkdown(text: string) {
+function renderPlainTextWithEntityLinks(text: string, actions?: MarkdownActions) {
+  if (!actions) {
+    return text;
+  }
+
+  const nodes: React.ReactNode[] = [];
+  const pattern = /\b(Creative|Campaign)\s+(\d+)\b/gi;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text))) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    const kind = match[1].toLowerCase();
+    const id = match[2];
+    const label = `${match[1]} ${id}`;
+    const canLink = kind === "creative" ? actions.hasCreative(id) : actions.hasCampaign(id);
+
+    nodes.push(
+      canLink ? (
+        <button
+          key={`${kind}-${id}-${match.index}`}
+          type="button"
+          className="copilot-entity-link"
+          onClick={() => {
+            if (kind === "creative") {
+              actions.onPreviewCreative(id);
+              return;
+            }
+            actions.onApplyCampaign(id);
+          }}
+        >
+          {label}
+        </button>
+      ) : (
+        label
+      ),
+    );
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : text;
+}
+
+function renderInlineMarkdown(text: string, actions?: MarkdownActions) {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
 
   return parts.map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
+      return <strong key={index}>{renderPlainTextWithEntityLinks(part.slice(2, -2), actions)}</strong>;
     }
 
     if (part.startsWith("*") && part.endsWith("*")) {
-      return <em key={index}>{part.slice(1, -1)}</em>;
+      return <em key={index}>{renderPlainTextWithEntityLinks(part.slice(1, -1), actions)}</em>;
     }
 
     if (part.startsWith("`") && part.endsWith("`")) {
@@ -653,11 +760,11 @@ function renderInlineMarkdown(text: string) {
       );
     }
 
-    return part;
+    return renderPlainTextWithEntityLinks(part, actions);
   });
 }
 
-function markdownToBlocks(markdown: string) {
+function markdownToBlocks(markdown: string, actions?: MarkdownActions) {
   const blocks: React.ReactNode[] = [];
   const lines = markdown.split("\n");
   let listItems: React.ReactNode[] = [];
@@ -686,35 +793,35 @@ function markdownToBlocks(markdown: string) {
     const unorderedMatch = line.match(/^[-*]\s+(.+)$/);
     if (unorderedMatch) {
       orderedListItems = [];
-      listItems.push(<li key={`li-${index}`}>{renderInlineMarkdown(unorderedMatch[1])}</li>);
+      listItems.push(<li key={`li-${index}`}>{renderInlineMarkdown(unorderedMatch[1], actions)}</li>);
       return;
     }
 
     const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
     if (orderedMatch) {
       listItems = [];
-      orderedListItems.push(<li key={`oli-${index}`}>{renderInlineMarkdown(orderedMatch[1])}</li>);
+      orderedListItems.push(<li key={`oli-${index}`}>{renderInlineMarkdown(orderedMatch[1], actions)}</li>);
       return;
     }
 
     flushLists();
 
     if (line.startsWith("### ")) {
-      blocks.push(<h4 key={`h4-${index}`}>{renderInlineMarkdown(line.slice(4))}</h4>);
+      blocks.push(<h4 key={`h4-${index}`}>{renderInlineMarkdown(line.slice(4), actions)}</h4>);
       return;
     }
 
     if (line.startsWith("## ")) {
-      blocks.push(<h3 key={`h3-${index}`}>{renderInlineMarkdown(line.slice(3))}</h3>);
+      blocks.push(<h3 key={`h3-${index}`}>{renderInlineMarkdown(line.slice(3), actions)}</h3>);
       return;
     }
 
     if (line.startsWith("# ")) {
-      blocks.push(<h3 key={`h3-${index}`}>{renderInlineMarkdown(line.slice(2))}</h3>);
+      blocks.push(<h3 key={`h3-${index}`}>{renderInlineMarkdown(line.slice(2), actions)}</h3>);
       return;
     }
 
-    blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(line)}</p>);
+    blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(line, actions)}</p>);
   });
 
   flushLists();
@@ -742,10 +849,42 @@ export function Dashboard({ data }: DashboardProps) {
     [data, filters],
   );
 
+  const creativeById = useMemo(
+    () => new Map(data.creatives.map((creative) => [creative.creativeId, creative])),
+    [data.creatives],
+  );
+  const campaignById = useMemo(
+    () => new Map(data.filters.campaigns.map((campaign) => [campaign.id, campaign])),
+    [data.filters.campaigns],
+  );
+
   function updateFilter(field: FilterField, value: string) {
-    setCopilotAnswer("");
     setCopilotError("");
     setFilters((current) => sanitizeFilters(data, { ...current, [field]: value }));
+  }
+
+  function previewCreativeById(creativeId: string) {
+    const creative = creativeById.get(creativeId);
+    if (creative) {
+      setPreviewCreative(creative);
+    }
+  }
+
+  function applyCampaignFilter(campaignId: string) {
+    const campaign = campaignById.get(campaignId);
+    setCopilotError("");
+    setFilters((current) =>
+      sanitizeFilters(data, {
+        ...current,
+        advertiser: campaign?.advertiser ?? "All",
+        vertical: campaign?.vertical ?? "All",
+        campaignId,
+        country: "All",
+        os: "All",
+        format: "All",
+        search: "",
+      }),
+    );
   }
 
   const ranked = useMemo(() => {
@@ -827,6 +966,16 @@ export function Dashboard({ data }: DashboardProps) {
       },
     }),
     [fatigue, filters, market, pauseList, ranked, testList, topPerformers, traitInsights],
+  );
+
+  const copilotMarkdownActions = useMemo<MarkdownActions>(
+    () => ({
+      onPreviewCreative: previewCreativeById,
+      onApplyCampaign: applyCampaignFilter,
+      hasCreative: (creativeId) => creativeById.has(creativeId),
+      hasCampaign: (campaignId) => campaignById.has(campaignId),
+    }),
+    [campaignById, creativeById],
   );
 
   async function askCopilot() {
@@ -1063,7 +1212,7 @@ export function Dashboard({ data }: DashboardProps) {
               <span>{copilotError}</span>
             </div>
           ) : null}
-          {copilotAnswer ? <div className="copilot-answer">{markdownToBlocks(copilotAnswer)}</div> : null}
+          {copilotAnswer ? <div className="copilot-answer">{markdownToBlocks(copilotAnswer, copilotMarkdownActions)}</div> : null}
         </article>
       </section>
       <CreativePreviewModal creative={previewCreative} onClose={() => setPreviewCreative(null)} />
