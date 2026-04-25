@@ -4,12 +4,13 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar, CartesianGrid, Legend,
 } from 'recharts';
-import { fmtPct, fmt, fmtUSD, statusLabel, CHART_COLORS } from '../utils';
+import { AlertTriangle, BarChart3, CheckCircle, Dna, FlaskConical, Lightbulb, Link2, Palette, Target, X } from 'lucide-react';
+import { fmtPct, fmt, fmtUSD, statusLabel } from '../utils';
 
 const MODEL_OPTIONS = [
-  { key: 'combined', label: '🧬 Combined', desc: 'Visual + Performance' },
-  { key: 'performance', label: '📊 Performance', desc: 'Metrics only' },
-  { key: 'visual', label: '🎨 Visual DNA', desc: 'Creative attributes' },
+  { key: 'combined', label: 'Combined', desc: 'Visual + Performance', Icon: Dna },
+  { key: 'performance', label: 'Performance', desc: 'Metrics only', Icon: BarChart3 },
+  { key: 'visual', label: 'Visual DNA', desc: 'Creative attributes', Icon: Palette },
 ];
 
 const CLUSTER_COLORS = ['#6c5ce7', '#00d2a0', '#ff6b6b', '#ffc857', '#54a0ff', '#f78fb3', '#3dc1d3', '#e77f67'];
@@ -102,22 +103,26 @@ export default function Clusters({ data }) {
   return (
     <div>
       <div className="page-header">
-        <h2>🧬 ML Creative Clustering</h2>
+        <h2><Dna size={22} /> ML Creative Clustering</h2>
         <p>K-Means clustering with {mlData.featureKeys.length} features · {mlData.k} clusters · Silhouette {mlData.silhouette.toFixed(3)}</p>
       </div>
 
       {/* Model selector */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-        {MODEL_OPTIONS.map(m => (
+        {MODEL_OPTIONS.map(m => {
+          const ModelIcon = m.Icon;
+          return (
           <button key={m.key} onClick={() => { setModel(m.key); setSelectedCluster(null); }}
             style={{
               padding: '10px 18px', borderRadius: 10, border: model === m.key ? '1.5px solid var(--accent)' : '1px solid var(--border)',
               background: model === m.key ? 'rgba(124,108,240,0.08)' : 'var(--bg-card)', cursor: 'pointer',
               color: 'var(--text-primary)', fontSize: 13, fontWeight: model === m.key ? 600 : 400, transition: 'var(--transition)',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
-            {m.label} <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>{m.desc}</span>
+            <ModelIcon size={14} /> {m.label} <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>{m.desc}</span>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Stats row */}
@@ -136,7 +141,10 @@ export default function Clusters({ data }) {
         <div className="stat-card">
           <div className="stat-label">Silhouette Score</div>
           <div className="stat-value">{mlData.silhouette.toFixed(3)}</div>
-          <div className="stat-change">{mlData.silhouette > 0.25 ? '✅ Good separation' : '⚠️ Overlapping clusters'}</div>
+          <div className="stat-change">
+            {mlData.silhouette > 0.25 ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
+            {mlData.silhouette > 0.25 ? 'Good separation' : 'Overlapping clusters'}
+          </div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Features Used</div>
@@ -221,8 +229,8 @@ export default function Clusters({ data }) {
               {/* LLM Insight */}
               {(cl.llmWhy || cl.llmCommon) && (
                 <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8, background: 'rgba(124,108,240,0.04)', borderLeft: '2px solid var(--accent)' }}>
-                  {cl.llmWhy && <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>💡 {cl.llmWhy}</div>}
-                  {cl.llmCommon && <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>🔗 {cl.llmCommon}</div>}
+                  {cl.llmWhy && <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5, display: 'flex', gap: 6, alignItems: 'flex-start' }}><Lightbulb size={13} style={{ flexShrink: 0, marginTop: 1 }} /> {cl.llmWhy}</div>}
+                  {cl.llmCommon && <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2, display: 'flex', gap: 6, alignItems: 'flex-start' }}><Link2 size={13} style={{ flexShrink: 0, marginTop: 1 }} /> {cl.llmCommon}</div>}
                 </div>
               )}
             </div>
@@ -233,7 +241,7 @@ export default function Clusters({ data }) {
       {/* Radar + Comparison */}
       <div className="grid-2" style={{ marginTop: 20 }}>
         <div className="card">
-          <div className="card-header"><h3>🎯 Centroid Profiles</h3></div>
+          <div className="card-header"><h3><Target size={18} /> Centroid Profiles</h3></div>
           {radarData.length > 0 && (
             <ResponsiveContainer width="100%" height={320}>
               <RadarChart data={radarData}>
@@ -253,7 +261,7 @@ export default function Clusters({ data }) {
         </div>
 
         <div className="card">
-          <div className="card-header"><h3>📊 Cluster Comparison</h3></div>
+          <div className="card-header"><h3><BarChart3 size={18} /> Cluster Comparison</h3></div>
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={comparisonData} margin={{ bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -271,7 +279,7 @@ export default function Clusters({ data }) {
       {/* Elbow chart */}
       <div className="card" style={{ marginTop: 20 }}>
         <div className="card-header">
-          <h3>🔬 Model Selection (Elbow Method)</h3>
+          <h3><FlaskConical size={18} /> Model Selection (Elbow Method)</h3>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>K={mlData.k} selected by silhouette maximization</span>
         </div>
         <div style={{ display: 'flex', gap: 20, padding: '0 16px 16px', flexWrap: 'wrap' }}>
@@ -293,10 +301,10 @@ export default function Clusters({ data }) {
       {neighborsFor && (
         <div className="card" style={{ marginTop: 20 }}>
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3>🔗 Nearest Neighbors: "{neighborsFor.headline}"</h3>
+            <h3><Link2 size={18} /> Nearest Neighbors: "{neighborsFor.headline}"</h3>
             <button onClick={() => setShowNeighbors(null)}
-              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 12 }}>
-              ✕ Close
+              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <X size={13} /> Close
             </button>
           </div>
           <div className="creatives-grid">
@@ -339,8 +347,8 @@ export default function Clusters({ data }) {
           {/* LLM Cluster Insight */}
           {(active.llmWhy || active.llmCommon) && (
             <div style={{ margin: '0 16px 12px', padding: '12px 16px', borderRadius: 10, background: 'linear-gradient(135deg, rgba(124,108,240,0.06), rgba(0,210,160,0.04))', border: '1px solid var(--border)' }}>
-              {active.llmWhy && <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 500 }}>💡 {active.llmWhy}</div>}
-              {active.llmCommon && <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 4 }}>🔗 {active.llmCommon}</div>}
+              {active.llmWhy && <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, fontWeight: 500, display: 'flex', gap: 8, alignItems: 'flex-start' }}><Lightbulb size={15} style={{ flexShrink: 0, marginTop: 2 }} /> {active.llmWhy}</div>}
+              {active.llmCommon && <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: 4, display: 'flex', gap: 8, alignItems: 'flex-start' }}><Link2 size={14} style={{ flexShrink: 0, marginTop: 2 }} /> {active.llmCommon}</div>}
             </div>
           )}
           {/* Status breakdown */}

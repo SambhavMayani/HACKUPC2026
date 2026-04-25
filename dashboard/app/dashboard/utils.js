@@ -29,10 +29,10 @@ export function statusColor(status) {
 
 export function statusLabel(status) {
   switch (status) {
-    case 'top_performer': return '🏆 Top Performer';
-    case 'stable': return '✅ Stable';
-    case 'fatigued': return '⚠️ Fatigued';
-    case 'underperformer': return '📉 Underperformer';
+    case 'top_performer': return 'Top Performer';
+    case 'stable': return 'Stable';
+    case 'fatigued': return 'Fatigued';
+    case 'underperformer': return 'Underperformer';
     default: return status;
   }
 }

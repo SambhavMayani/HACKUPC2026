@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart3, Check, Dna, FlaskConical, Lightbulb, MessageCircle, MousePointerClick, Palette, Ruler, Shapes, TrendingDown, Trophy, X } from 'lucide-react';
 import { fmtPct, fmtUSD, explainPerformance, getTopTraits, statusLabel, CHART_COLORS } from '../utils';
 
 export default function Explainability({ data, insight, benchmark }) {
@@ -73,27 +74,27 @@ export default function Explainability({ data, insight, benchmark }) {
   return (
     <div>
       <div className="page-header">
-        <h2>💡 Why Your Creatives Work (or Don't)</h2>
+        <h2><Lightbulb size={22} /> Why Your Creatives Work (or Don't)</h2>
         <p>Understand the traits driving your best and worst performance</p>
       </div>
 
       {/* Winning Formula */}
       {winningFormula && (
         <div className="card" style={{ marginBottom: 24, background: 'linear-gradient(135deg, rgba(124,108,240,0.06), rgba(52,211,153,0.04))' }}>
-          <div className="card-header"><h3>🧬 Your Winning Creative Formula</h3></div>
+          <div className="card-header"><h3><Dna size={18} /> Your Winning Creative Formula</h3></div>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
             Based on your {topPerformers.length} top-performing creatives, this is the profile you should replicate:
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {[
-              ['Format', winningFormula.format, '📐'],
-              ['Theme', winningFormula.theme, '🎨'],
-              ['Hook', winningFormula.hook_type, '🪝'],
-              ['Color', winningFormula.dominant_color, '🎨'],
-              ['Tone', winningFormula.emotional_tone, '💭'],
-            ].map(([label, val, icon]) => (
+              ['Format', winningFormula.format, Ruler],
+              ['Theme', winningFormula.theme, Palette],
+              ['Hook', winningFormula.hook_type, MousePointerClick],
+              ['Color', winningFormula.dominant_color, Shapes],
+              ['Tone', winningFormula.emotional_tone, MessageCircle],
+            ].map(([label, val, Icon]) => (
               <div key={label} style={{ background: 'var(--bg-card-solid)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 18px', minWidth: 130 }}>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{icon} {label}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Icon size={13} /> {label}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>{val}</div>
               </div>
             ))}
@@ -103,7 +104,7 @@ export default function Explainability({ data, insight, benchmark }) {
 
       {/* What separates winners */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div className="card-header"><h3>🔬 What Separates Your Winners</h3></div>
+        <div className="card-header"><h3><FlaskConical size={18} /> What Separates Your Winners</h3></div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
           Comparing attribute values of your top performers vs the rest of your portfolio
         </p>
@@ -139,7 +140,7 @@ export default function Explainability({ data, insight, benchmark }) {
 
       {/* Top Performers */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div className="card-header"><h3>🏆 Your Top Performers — Why They Work</h3></div>
+        <div className="card-header"><h3><Trophy size={18} /> Your Top Performers — Why They Work</h3></div>
         <div className="creatives-grid">
           {topPerformers.slice(0, 6).map(c => {
             const reasons = explainPerformance(c);
@@ -154,7 +155,7 @@ export default function Explainability({ data, insight, benchmark }) {
                   <div style={{ marginTop: 10 }}>
                     {reasons.map((r, i) => (
                       <div key={i} style={{ fontSize: 12, marginBottom: 4, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                        <span style={{ color: 'var(--green)', flexShrink: 0 }}>✓</span>
+                        <Check size={13} style={{ color: 'var(--green)', flexShrink: 0, marginTop: 1 }} />
                         <span style={{ color: 'var(--text-secondary)' }}>{r}</span>
                       </div>
                     ))}
@@ -175,7 +176,7 @@ export default function Explainability({ data, insight, benchmark }) {
 
       {/* Trait Analysis */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div className="card-header"><h3>📊 What Works Best in Your Portfolio</h3></div>
+        <div className="card-header"><h3><BarChart3 size={18} /> What Works Best in Your Portfolio</h3></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 24 }}>
           {traits.map(trait => (
             <div key={trait}>
@@ -197,7 +198,7 @@ export default function Explainability({ data, insight, benchmark }) {
 
       {/* Underperformers */}
       <div className="card">
-        <div className="card-header"><h3>📉 Your Underperformers — What's Going Wrong</h3></div>
+        <div className="card-header"><h3><TrendingDown size={18} /> Your Underperformers — What's Going Wrong</h3></div>
         <div className="creatives-grid">
           {data.creatives.filter(c => c.status === 'underperformer').sort((a, b) => a.perf_score - b.perf_score).slice(0, 6).map(c => {
             const reasons = explainPerformance(c);
@@ -211,7 +212,7 @@ export default function Explainability({ data, insight, benchmark }) {
                   <div style={{ marginTop: 10 }}>
                     {reasons.map((r, i) => (
                       <div key={i} style={{ fontSize: 12, marginBottom: 4, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                        <span style={{ color: 'var(--red)', flexShrink: 0 }}>✗</span>
+                        <X size={13} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 1 }} />
                         <span style={{ color: 'var(--text-secondary)' }}>{r}</span>
                       </div>
                     ))}

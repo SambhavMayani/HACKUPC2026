@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts';
+import { Activity, AlertTriangle, ArrowRight, ClipboardList, Globe2, Lightbulb, Ruler, Siren, Smartphone, Target, Trophy } from 'lucide-react';
 import { fmt, fmtUSD, fmtPct, CHART_COLORS, statusLabel } from '../utils';
 
 const statusColors = { top_performer: '#34d399', stable: '#60a5fa', fatigued: '#fbbf24', underperformer: '#f87171' };
@@ -100,9 +101,9 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
   // Urgent alerts
   const urgentAlerts = [];
   if (insight) {
-    if (insight.statusBreakdown.fatigued > 3) urgentAlerts.push({ type: 'warning', text: `${insight.statusBreakdown.fatigued} creatives are fatigued — consider refreshing or rotating them`, action: 'fatigue' });
-    if (insight.wastedSpend > 10000) urgentAlerts.push({ type: 'danger', text: `${fmtUSD(insight.wastedSpend)} spent on underperforming creatives — pause them to save budget`, action: 'recommendations' });
-    if (insight.diversityScore < 0.15) urgentAlerts.push({ type: 'info', text: `Your creative diversity is low — try new format + theme combinations`, action: 'explainability' });
+    if (insight.statusBreakdown.fatigued > 3) urgentAlerts.push({ type: 'warning', Icon: AlertTriangle, text: `${insight.statusBreakdown.fatigued} creatives are fatigued — consider refreshing or rotating them`, action: 'fatigue' });
+    if (insight.wastedSpend > 10000) urgentAlerts.push({ type: 'danger', Icon: Siren, text: `${fmtUSD(insight.wastedSpend)} spent on underperforming creatives — pause them to save budget`, action: 'recommendations' });
+    if (insight.diversityScore < 0.15) urgentAlerts.push({ type: 'info', Icon: Lightbulb, text: `Your creative diversity is low — try new format + theme combinations`, action: 'explainability' });
   }
 
   return (
@@ -127,12 +128,15 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
               }}
             >
               <span style={{ color: 'var(--text-secondary)' }}>
-                <strong style={{ color: alert.type === 'danger' ? 'var(--red)' : alert.type === 'warning' ? 'var(--yellow)' : 'var(--blue)' }}>
-                  {alert.type === 'danger' ? '🚨' : alert.type === 'warning' ? '⚠️' : '💡'}
+                <strong style={{ color: alert.type === 'danger' ? 'var(--red)' : alert.type === 'warning' ? 'var(--yellow)' : 'var(--blue)', display: 'inline-flex', verticalAlign: 'middle' }}>
+                  {(() => {
+                    const AlertIcon = alert.Icon;
+                    return <AlertIcon size={15} />;
+                  })()}
                 </strong>{' '}
                 {alert.text}
               </span>
-              <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 12 }}>View →</span>
+              <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>View <ArrowRight size={13} /></span>
             </div>
           ))}
         </div>
@@ -180,7 +184,7 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
         <div className="grid-2" style={{ marginBottom: 24 }}>
           <div className="card">
             <div className="card-header">
-              <h3>📏 You vs Industry Average</h3>
+              <h3><Ruler size={18} /> You vs Industry Average</h3>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{insight.vertical} vertical benchmark</span>
             </div>
             <BenchmarkBar label="Click-Through Rate" value={insight.ctr} benchmark={benchmark.avg_ctr} format="pct" higherIsBetter={true} />
@@ -189,7 +193,7 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
             <BenchmarkBar label="Cost per Acquisition" value={insight.cpa} benchmark={benchmark.avg_cpa} format="usd" higherIsBetter={false} />
           </div>
           <div className="card">
-            <div className="card-header"><h3>🎯 Your Performance Profile</h3></div>
+            <div className="card-header"><h3><Target size={18} /> Your Performance Profile</h3></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <HealthScore stats={stats} />
               {radarData && (
@@ -209,7 +213,7 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
       <div className="grid-2">
         {/* Creative Health */}
         <div className="card">
-          <div className="card-header"><h3>Your Creative Health</h3></div>
+          <div className="card-header"><h3><Activity size={18} /> Your Creative Health</h3></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
             <ResponsiveContainer width="48%" height={190}>
               <PieChart>
@@ -241,7 +245,7 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
 
         {/* Country performance */}
         <div className="card">
-          <div className="card-header"><h3>🌍 Your Performance by Country</h3></div>
+          <div className="card-header"><h3><Globe2 size={18} /> Your Performance by Country</h3></div>
           {countryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={countryData.slice(0, 8)} layout="vertical" margin={{ left: 50 }}>
@@ -262,7 +266,7 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
       {/* OS Breakdown */}
       {osData.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3>📱 Your Performance by Platform</h3></div>
+          <div className="card-header"><h3><Smartphone size={18} /> Your Performance by Platform</h3></div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(osData.length, 4)}, 1fr)`, gap: 14 }}>
             {osData.map((o, i) => (
               <div key={o.os} style={{ background: 'var(--bg-primary)', borderRadius: 12, padding: '16px 18px', borderLeft: `3px solid ${CHART_COLORS[i]}` }}>
@@ -294,7 +298,7 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
       {/* Campaign Efficiency */}
       {insight && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3>📋 Your Campaign Efficiency</h3></div>
+          <div className="card-header"><h3><ClipboardList size={18} /> Your Campaign Efficiency</h3></div>
           <table className="data-table">
             <thead>
               <tr>
@@ -337,8 +341,8 @@ export default function Overview({ data, insight, benchmark, onNavigate }) {
       {/* Top Creatives */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
-          <h3>🏆 Your Best Creatives</h3>
-          <button className="tab active" onClick={() => onNavigate('explorer')}>See All →</button>
+          <h3><Trophy size={18} /> Your Best Creatives</h3>
+          <button className="tab active" onClick={() => onNavigate('explorer')}>See All <ArrowRight size={13} /></button>
         </div>
         <div className="creatives-grid">
           {topCreatives.map(c => (

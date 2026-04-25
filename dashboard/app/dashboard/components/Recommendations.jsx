@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { DollarSign, FlaskConical, Pause, RefreshCw, Target, TrendingUp } from 'lucide-react';
 import { fmtPct, fmtUSD, fmt, statusLabel } from '../utils';
 
 export default function Recommendations({ data, insight, benchmark }) {
@@ -118,7 +119,7 @@ export default function Recommendations({ data, insight, benchmark }) {
   const actionOrder = { scale: 0, pause: 1, refresh: 2, test: 3 };
   const sortedRecs = [...recs].sort((a, b) => actionOrder[a.action] - actionOrder[b.action]);
 
-  const actionIcons = { scale: '🚀', pause: '⏸️', refresh: '🔄', test: '🧪' };
+  const actionIcons = { scale: TrendingUp, pause: Pause, refresh: RefreshCw, test: FlaskConical };
   const actionLabels = { scale: 'Scale Up', pause: 'Pause', refresh: 'Refresh', test: 'Test New' };
 
   // Calculate total potential impact
@@ -128,7 +129,7 @@ export default function Recommendations({ data, insight, benchmark }) {
   return (
     <div>
       <div className="page-header">
-        <h2>🎯 What You Should Do Next</h2>
+        <h2><Target size={22} /> What You Should Do Next</h2>
         <p>Personalized actions to maximize your creative ROI</p>
       </div>
 
@@ -156,7 +157,7 @@ export default function Recommendations({ data, insight, benchmark }) {
       {/* Budget reallocation insight */}
       {totalSavings > 0 && (
         <div className="card" style={{ marginBottom: 24, background: 'linear-gradient(135deg, rgba(0,210,160,0.06), rgba(108,92,231,0.06))' }}>
-          <div className="card-header"><h3>💰 Budget Reallocation Opportunity</h3></div>
+          <div className="card-header"><h3><DollarSign size={18} /> Budget Reallocation Opportunity</h3></div>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
             By pausing {recs.filter(r => r.action === 'pause').length} underperforming creatives, you can recover
             <strong style={{ color: 'var(--green)' }}> {fmtUSD(totalSavings)}</strong> in wasted spend.
@@ -171,7 +172,11 @@ export default function Recommendations({ data, insight, benchmark }) {
           <div key={i} className="rec-card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div className={`rec-action ${rec.action}`}>
-                {actionIcons[rec.action]} {actionLabels[rec.action]}
+                {(() => {
+                  const ActionIcon = actionIcons[rec.action];
+                  return <ActionIcon size={14} />;
+                })()}
+                {actionLabels[rec.action]}
               </div>
               {rec.impact === 'high' && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>High Impact</span>

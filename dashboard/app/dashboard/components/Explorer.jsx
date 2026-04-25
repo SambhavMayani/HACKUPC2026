@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { AlertTriangle, Check, CheckCircle, Dna, Grid2X2, Hourglass, List, Search, TrendingDown, TrendingUp, X, XCircle } from 'lucide-react';
 import { fmt, fmtUSD, fmtPct, statusLabel, explainPerformance, getTopTraits } from '../utils';
 
 export default function Explorer({ data, campaignId, creativeId }) {
@@ -76,7 +77,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
   return (
     <div>
       <div className="page-header">
-        <h2>🔍 Creative Performance Explorer</h2>
+        <h2><Search size={22} /> Creative Performance Explorer</h2>
         <p>Explore, compare, and drill into creative performance across all dimensions</p>
       </div>
 
@@ -104,8 +105,8 @@ export default function Explorer({ data, campaignId, creativeId }) {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{filtered.length} creatives</span>
           <div className="view-toggle">
-            <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => { setViewMode('grid'); setPage(0); }}>⊞</button>
-            <button className={viewMode === 'table' ? 'active' : ''} onClick={() => { setViewMode('table'); setPage(0); }}>☰</button>
+            <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => { setViewMode('grid'); setPage(0); }} aria-label="Grid view"><Grid2X2 size={15} /></button>
+            <button className={viewMode === 'table' ? 'active' : ''} onClick={() => { setViewMode('table'); setPage(0); }} aria-label="Table view"><List size={15} /></button>
           </div>
         </div>
       </div>
@@ -189,7 +190,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
       {selected && (
         <div className="modal-overlay" onClick={() => setSelected(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelected(null)}>✕ Close</button>
+            <button className="modal-close" onClick={() => setSelected(null)}><X size={14} /> Close</button>
 
             {/* Header */}
             <div style={{ display: 'flex', gap: 24, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -229,7 +230,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
             {/* Performance trend */}
             {selectedTs.length > 0 && (
               <div style={{ marginBottom: 24 }}>
-                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>📈 Performance Over Time</h4>
+                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><TrendingUp size={16} /> Performance Over Time</h4>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={selectedTs}>
                     <XAxis dataKey="day" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -255,13 +256,21 @@ export default function Explorer({ data, campaignId, creativeId }) {
               {/* Why */}
               <div>
                 <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>
-                  {selected.status === 'top_performer' || selected.status === 'stable' ? '✅ Why It Works' : '⚠️ What\'s Happening'}
+                  {selected.status === 'top_performer' || selected.status === 'stable' ? (
+                    <><CheckCircle size={16} /> Why It Works</>
+                  ) : (
+                    <><AlertTriangle size={16} /> What's Happening</>
+                  )}
                 </h4>
                 {selectedReasons.map((r, i) => (
                   <div key={i} style={{ fontSize: 13, marginBottom: 6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <span style={{ color: selected.status === 'underperformer' ? 'var(--red)' : selected.status === 'fatigued' ? 'var(--yellow)' : 'var(--green)', flexShrink: 0 }}>
-                      {selected.status === 'underperformer' ? '✗' : selected.status === 'fatigued' ? '⚠' : '✓'}
-                    </span>
+                    {selected.status === 'underperformer' ? (
+                      <XCircle size={14} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 1 }} />
+                    ) : selected.status === 'fatigued' ? (
+                      <AlertTriangle size={14} style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 1 }} />
+                    ) : (
+                      <Check size={14} style={{ color: 'var(--green)', flexShrink: 0, marginTop: 1 }} />
+                    )}
                     <span style={{ color: 'var(--text-secondary)' }}>{r}</span>
                   </div>
                 ))}
@@ -276,7 +285,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
 
               {/* Creative attributes */}
               <div>
-                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>🧬 Creative DNA</h4>
+                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><Dna size={16} /> Creative DNA</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {[
                     ['Theme', selected.theme],
@@ -322,7 +331,11 @@ export default function Explorer({ data, campaignId, creativeId }) {
             {(selected.ctr_decay < -0.2 || selected.cvr_decay < -0.2) && (
               <div style={{ marginTop: 20, padding: '14px 18px', background: selected.status === 'fatigued' ? 'var(--yellow-bg)' : 'var(--red-bg)', borderRadius: 10, fontSize: 13, border: `1px solid ${selected.status === 'fatigued' ? 'rgba(251,191,36,0.15)' : 'rgba(248,113,113,0.15)'}` }}>
                 <strong style={{ color: selected.status === 'fatigued' ? 'var(--yellow)' : 'var(--red)' }}>
-                  {selected.status === 'fatigued' ? '⏳ Fatigue Detected' : '📉 Performance Declining'}
+                  {selected.status === 'fatigued' ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Hourglass size={15} /> Fatigue Detected</span>
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><TrendingDown size={15} /> Performance Declining</span>
+                  )}
                 </strong>
                 <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
                   CTR: {fmtPct(selected.first_7d_ctr)} → {fmtPct(selected.last_7d_ctr)} ({(selected.ctr_decay * 100).toFixed(0)}%) &nbsp;·&nbsp;

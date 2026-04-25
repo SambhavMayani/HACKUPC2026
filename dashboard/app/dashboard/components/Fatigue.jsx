@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { fmtPct, fmtUSD, statusLabel, CHART_COLORS } from '../utils';
+import { AlertTriangle, BarChart3, Hourglass, Lightbulb, Siren, TrendingDown } from 'lucide-react';
+import { fmtPct, fmtUSD, CHART_COLORS } from '../utils';
 
 export default function Fatigue({ data, insight }) {
   const [selectedId, setSelectedId] = useState(null);
@@ -64,7 +65,7 @@ export default function Fatigue({ data, insight }) {
   return (
     <div>
       <div className="page-header">
-        <h2>⏳ Your Fatigue Alerts</h2>
+        <h2><Hourglass size={22} /> Your Fatigue Alerts</h2>
         <p>These creatives are losing effectiveness — act now before they waste your budget</p>
       </div>
 
@@ -94,7 +95,7 @@ export default function Fatigue({ data, insight }) {
       {/* Fatigue by format insight */}
       {fatigueByFormat.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3>📊 Which Formats Fatigue Fastest?</h3></div>
+          <div className="card-header"><h3><BarChart3 size={18} /> Which Formats Fatigue Fastest?</h3></div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             {fatigueByFormat.map((f, i) => (
               <div key={f.format} style={{
@@ -114,10 +115,10 @@ export default function Fatigue({ data, insight }) {
 
       <div className="grid-2">
         <div className="card" style={{ maxHeight: 500, overflowY: 'auto' }}>
-          <div className="card-header"><h3>⚠️ Fatigued Creatives</h3></div>
+          <div className="card-header"><h3><AlertTriangle size={18} /> Fatigued Creatives</h3></div>
           {fatigued.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-              🎉 No fatigued creatives — your portfolio is healthy!
+              No fatigued creatives — your portfolio is healthy!
             </div>
           ) : fatigued.map(c => (
             <div
@@ -145,7 +146,7 @@ export default function Fatigue({ data, insight }) {
 
         <div className="card">
           <div className="card-header">
-            <h3>📉 Performance Over Time {selected ? `— "${selected.headline}"` : ''}</h3>
+            <h3><TrendingDown size={18} /> Performance Over Time {selected ? `— "${selected.headline}"` : ''}</h3>
           </div>
           {selected && ts.length > 0 ? (
             <>
@@ -155,20 +156,20 @@ export default function Fatigue({ data, insight }) {
                   <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => (v * 100).toFixed(1) + '%'} />
                   <Tooltip content={<CustomTooltip />} />
                   {selected.fatigue_day && (
-                    <ReferenceLine x={selected.fatigue_day} stroke="var(--yellow)" strokeDasharray="5 5" label={{ value: `⚠️ Day ${selected.fatigue_day}`, fill: 'var(--yellow)', fontSize: 11 }} />
+                    <ReferenceLine x={selected.fatigue_day} stroke="var(--yellow)" strokeDasharray="5 5" label={{ value: `Day ${selected.fatigue_day}`, fill: 'var(--yellow)', fontSize: 11 }} />
                   )}
                   <Line type="monotone" dataKey="ctr" name="CTR" stroke="var(--accent)" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="cvr" name="CVR" stroke="var(--green)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
               <div style={{ marginTop: 12, padding: '14px 16px', background: 'var(--yellow-bg)', borderRadius: 8, fontSize: 13, lineHeight: 1.6 }}>
-                <strong style={{ color: 'var(--yellow)' }}>⚠️ Fatigue Analysis:</strong>
+                <strong style={{ color: 'var(--yellow)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={15} /> Fatigue Analysis:</strong>
                 <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
                   CTR dropped <strong>{Math.abs(selected.ctr_decay * 100).toFixed(0)}%</strong> from {fmtPct(selected.first_7d_ctr)} → {fmtPct(selected.last_7d_ctr)} after day {selected.fatigue_day || '~14'}.
                   This creative has consumed <strong>{fmtUSD(selected.spend)}</strong>.
                 </div>
                 <div style={{ color: 'var(--text-secondary)', marginTop: 6 }}>
-                  <strong style={{ color: 'var(--green)' }}>💡 Suggestion:</strong> The "{selected.theme}" theme + "{selected.format}" format initially worked well.
+                  <strong style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Lightbulb size={15} /> Suggestion:</strong> The "{selected.theme}" theme + "{selected.format}" format initially worked well.
                   Consider creating a variant with fresh visuals (different {selected.dominant_color !== 'blue' ? 'blue' : 'green'} palette, updated copy) to capture renewed attention.
                 </div>
               </div>
@@ -182,7 +183,7 @@ export default function Fatigue({ data, insight }) {
       {/* At-Risk Creatives */}
       {atRisk.length > 0 && (
         <div className="card" style={{ marginTop: 20 }}>
-          <div className="card-header"><h3>🚨 At-Risk Creatives (Stable but CTR Declining &gt;40%)</h3></div>
+          <div className="card-header"><h3><Siren size={18} /> At-Risk Creatives (Stable but CTR Declining &gt;40%)</h3></div>
           <div className="creatives-grid">
             {atRisk.slice(0, 8).map(c => (
               <div key={c.id} className="creative-card" onClick={() => setSelectedId(c.id)}>

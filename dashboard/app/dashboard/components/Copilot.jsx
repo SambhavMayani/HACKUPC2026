@@ -1,4 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
+import { Bot } from 'lucide-react';
+
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu;
+const stripEmoji = (text) => text.replace(EMOJI_RE, '').replace(/[ \t]+\n/g, '\n').trim();
 
 function buildCopilotContext(data, insight, account) {
   const { stats, creatives, traitAnalysis, countryPerf, osPerf } = data;
@@ -91,7 +95,7 @@ function renderEntityLinks(text, actions) {
 function initialMessages(data) {
   return [{
     role: 'assistant',
-    content: `👋 Hey! I'm your Creative Intelligence Advisor.\n\nI've analyzed your ${data.stats.totalCreatives} creatives across ${data.stats.totalCampaigns} campaigns. Ask me anything about your performance.\n\n**Try asking:**\n- "How are my creatives doing?"\n- "Where am I wasting budget?"\n- "What creative should I make next?"\n- "Which countries work best for me?"\n- "Why is my top creative performing well?"`
+    content: `Hey! I'm your Creative Intelligence Advisor.\n\nI've analyzed your ${data.stats.totalCreatives} creatives across ${data.stats.totalCampaigns} campaigns. Ask me anything about your performance.\n\n**Try asking:**\n- "How are my creatives doing?"\n- "Where am I wasting budget?"\n- "What creative should I make next?"\n- "Which countries work best for me?"\n- "Why is my top creative performing well?"`
   }];
 }
 
@@ -149,7 +153,7 @@ export default function Copilot({
       const reply = json.content || 'Sorry, I couldn\'t generate a response. Please try again.';
       onMessagesChange([...nextMessages, { role: 'assistant', content: reply }]);
     } catch (err) {
-      onMessagesChange([...nextMessages, { role: 'assistant', content: `⚠️ ${err.message || 'Connection issue. Please check your network and try again.'}` }]);
+      onMessagesChange([...nextMessages, { role: 'assistant', content: `Warning: ${err.message || 'Connection issue. Please check your network and try again.'}` }]);
     } finally {
       setLoading(false);
     }
@@ -192,7 +196,7 @@ export default function Copilot({
   return (
     <div>
       <div className="page-header">
-        <h2>🤖 Your AI Advisor</h2>
+        <h2><Bot size={22} /> Your AI Advisor</h2>
         <p>Ask questions about your creative performance in natural language</p>
       </div>
 
@@ -216,7 +220,7 @@ export default function Copilot({
         <div className="copilot-messages">
           {visibleMessages.map((msg, i) => (
             <div key={i} className={`copilot-msg ${msg.role}`}>
-              {msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content}
+              {msg.role === 'assistant' ? renderMarkdown(stripEmoji(msg.content)) : msg.content}
             </div>
           ))}
           {loading && (
