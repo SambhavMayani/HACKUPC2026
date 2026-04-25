@@ -613,6 +613,30 @@ img {
   min-height: 92px;
 }
 
+.news-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #fffdf7;
+  color: var(--black);
+  font-weight: 900;
+}
+
+.news-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.news-toggle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .copilot-panel button {
   width: 100%;
   min-height: 48px;

@@ -8,6 +8,7 @@ import {
   X,
   FlaskConical,
   Layers3,
+  Newspaper,
   RefreshCw,
   Rocket,
   Search,
@@ -725,6 +726,7 @@ export function Dashboard({ data }: DashboardProps) {
   const [copilotAnswer, setCopilotAnswer] = useState("");
   const [copilotError, setCopilotError] = useState("");
   const [copilotLoading, setCopilotLoading] = useState(false);
+  const [includeNews, setIncludeNews] = useState(false);
   const [previewCreative, setPreviewCreative] = useState<PreviewCreative | null>(null);
 
   const availableFilters = useMemo(
@@ -778,6 +780,7 @@ export function Dashboard({ data }: DashboardProps) {
   const recommendationContext = useMemo(
     () => ({
       filters,
+      verticals: [...new Set(ranked.map((item) => item.creative.vertical))],
       market,
       topPerformers: topPerformers.slice(0, 4).map((item) => ({
         creativeId: item.creative.creativeId,
@@ -809,7 +812,7 @@ export function Dashboard({ data }: DashboardProps) {
         test: testList.map((item) => `${item.creative.theme} / ${item.creative.hookType}`),
       },
     }),
-    [fatigue, filters, market, pauseList, testList, topPerformers, traitInsights],
+    [fatigue, filters, market, pauseList, ranked, testList, topPerformers, traitInsights],
   );
 
   async function askCopilot() {
@@ -820,7 +823,7 @@ export function Dashboard({ data }: DashboardProps) {
       const response = await fetch("/api/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, context: recommendationContext }),
+        body: JSON.stringify({ question, context: recommendationContext, includeNews }),
       });
       const payload = (await response.json()) as { content?: string; error?: string };
       if (!response.ok || !payload.content) {
@@ -1008,6 +1011,17 @@ export function Dashboard({ data }: DashboardProps) {
             <Bot size={24} />
           </div>
           <textarea value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} />
+          <label className="news-toggle">
+            <input
+              type="checkbox"
+              checked={includeNews}
+              onChange={(event) => setIncludeNews(event.target.checked)}
+            />
+            <span>
+              <Newspaper size={18} />
+              Include current trend news
+            </span>
+          </label>
           <button type="button" onClick={askCopilot} disabled={copilotLoading}>
             {copilotLoading ? "Asking copilot..." : "Ask copilot"}
             <ChevronRight size={18} />

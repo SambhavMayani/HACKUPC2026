@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { buildNewsQuery, getDailyNewsBrief } from "@/lib/news-cache";
 
 type CopilotBody = {
   question?: string;
   context?: unknown;
+  includeNews?: boolean;
+  newsQuery?: string;
 };
 
 export async function POST(request: Request) {
@@ -17,15 +20,25 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as CopilotBody;
   const question = body.question?.trim() || "Explain the selected creative performance slice.";
+  const news = body.includeNews
+    ? await getDailyNewsBrief(body.newsQuery?.trim() || buildNewsQuery(question, body.context))
+    : null;
 
   const prompt = [
     "You are an explainable creative strategist for mobile advertising.",
     "Use only the provided dashboard context. Write for a non-technical marketer.",
+    news
+      ? "You also have current news context. Use it only for trend-aware test ideas and clearly separate it from dataset evidence."
+      : "No current news context was requested. Do not speculate about external trends.",
     "Keep it concise, concrete, and action-oriented. Do not invent creatives or metrics.",
-    "Return Markdown with short bullets under these headings: Winning signals, Risks, Next actions.",
+    news
+      ? "Return Markdown with short bullets under these headings: Winning signals, Risks, Trend-aware next actions."
+      : "Return Markdown with short bullets under these headings: Winning signals, Risks, Next actions.",
     `User question: ${question}`,
     "Dashboard context:",
     JSON.stringify(body.context, null, 2),
+    news ? "Current news context:" : "",
+    news ? JSON.stringify(news, null, 2) : "",
   ].join("\n\n");
 
   const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
