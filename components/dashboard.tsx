@@ -11,9 +11,7 @@ import {
   Rocket,
   Search,
   ShieldAlert,
-  Sparkles,
   TrendingDown,
-  Trophy,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Creative, DashboardData, SegmentMetrics } from "@/lib/creative-intelligence";
@@ -92,6 +90,130 @@ function compactNumber(value: number) {
 
 function options(values: string[]) {
   return ["All", ...values];
+}
+
+type FilterField = Exclude<keyof Filters, "search">;
+
+const filterFields: FilterField[] = ["advertiser", "vertical", "campaignId", "country", "os", "format"];
+
+function matchesFilterValue(creative: Creative, field: FilterField, value: string) {
+  if (value === "All") {
+    return true;
+  }
+
+  if (field === "advertiser") {
+    return creative.advertiser === value;
+  }
+
+  if (field === "vertical") {
+    return creative.vertical === value;
+  }
+
+  if (field === "campaignId") {
+    return creative.campaignId === value;
+  }
+
+  if (field === "format") {
+    return creative.format === value;
+  }
+
+  return true;
+}
+
+function hasSegmentDelivery(creative: Creative, country: string, os: string) {
+  return (creative.segmentMetrics[`${country}::${os}`]?.impressions ?? 0) > 0;
+}
+
+function creativeMatchesFilters(creative: Creative, filters: Filters, ignoredField?: FilterField) {
+  for (const field of filterFields) {
+    if (field === ignoredField || field === "country" || field === "os") {
+      continue;
+    }
+
+    if (!matchesFilterValue(creative, field, filters[field])) {
+      return false;
+    }
+  }
+
+  const country = ignoredField === "country" ? "All" : filters.country;
+  const os = ignoredField === "os" ? "All" : filters.os;
+  return hasSegmentDelivery(creative, country, os);
+}
+
+function valueForField(creative: Creative, field: FilterField) {
+  if (field === "advertiser") {
+    return creative.advertiser;
+  }
+
+  if (field === "vertical") {
+    return creative.vertical;
+  }
+
+  if (field === "campaignId") {
+    return creative.campaignId;
+  }
+
+  if (field === "format") {
+    return creative.format;
+  }
+
+  return "";
+}
+
+function getAvailableFilterValues(data: DashboardData, filters: Filters, field: FilterField) {
+  const values = new Set<string>();
+
+  if (field === "country" || field === "os") {
+    for (const creative of data.creatives) {
+      if (!creativeMatchesFilters(creative, filters, field)) {
+        continue;
+      }
+
+      for (const [key, metrics] of Object.entries(creative.segmentMetrics)) {
+        if (metrics.impressions <= 0) {
+          continue;
+        }
+
+        const [country, os] = key.split("::");
+        if (field === "country" && country !== "All" && (filters.os === "All" || os === filters.os)) {
+          values.add(country);
+        }
+        if (field === "os" && os !== "All" && (filters.country === "All" || country === filters.country)) {
+          values.add(os);
+        }
+      }
+    }
+  } else {
+    for (const creative of data.creatives) {
+      if (creativeMatchesFilters(creative, filters, field)) {
+        values.add(valueForField(creative, field));
+      }
+    }
+  }
+
+  return [...values].filter(Boolean).sort((left, right) => left.localeCompare(right));
+}
+
+function sanitizeFilters(data: DashboardData, nextFilters: Filters) {
+  let sanitized = { ...nextFilters };
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    for (const field of filterFields) {
+      if (sanitized[field] === "All") {
+        continue;
+      }
+
+      const available = getAvailableFilterValues(data, sanitized, field);
+      if (!available.includes(sanitized[field])) {
+        sanitized = { ...sanitized, [field]: "All" };
+        changed = true;
+      }
+    }
+  }
+
+  return sanitized;
 }
 
 function getMetrics(creative: Creative, filters: Filters): SegmentMetrics {
@@ -434,13 +556,21 @@ export function Dashboard({ data }: DashboardProps) {
   const [copilotError, setCopilotError] = useState("");
   const [copilotLoading, setCopilotLoading] = useState(false);
 
-  const campaigns = useMemo(() => {
-    return data.filters.campaigns.filter(
-      (campaign) =>
-        (filters.advertiser === "All" || campaign.advertiser === filters.advertiser) &&
-        (filters.vertical === "All" || campaign.vertical === filters.vertical),
-    );
-  }, [data.filters.campaigns, filters.advertiser, filters.vertical]);
+  const availableFilters = useMemo(
+    () => ({
+      advertisers: getAvailableFilterValues(data, filters, "advertiser"),
+      verticals: getAvailableFilterValues(data, filters, "vertical"),
+      campaigns: getAvailableFilterValues(data, filters, "campaignId"),
+      countries: getAvailableFilterValues(data, filters, "country"),
+      oses: getAvailableFilterValues(data, filters, "os"),
+      formats: getAvailableFilterValues(data, filters, "format"),
+    }),
+    [data, filters],
+  );
+
+  function updateFilter(field: FilterField, value: string) {
+    setFilters((current) => sanitizeFilters(data, { ...current, [field]: value }));
+  }
 
   const ranked = useMemo(() => {
     const term = filters.search.trim().toLowerCase();
@@ -564,24 +694,24 @@ export function Dashboard({ data }: DashboardProps) {
         <Select
           label="Advertiser"
           value={filters.advertiser}
-          values={options(data.filters.advertisers)}
-          onChange={(value) => setFilters((current) => ({ ...current, advertiser: value, campaignId: "All" }))}
+          values={options(availableFilters.advertisers)}
+          onChange={(value) => updateFilter("advertiser", value)}
         />
         <Select
           label="Vertical"
           value={filters.vertical}
-          values={options(data.filters.verticals)}
-          onChange={(value) => setFilters((current) => ({ ...current, vertical: value, campaignId: "All" }))}
+          values={options(availableFilters.verticals)}
+          onChange={(value) => updateFilter("vertical", value)}
         />
         <Select
           label="Campaign"
           value={filters.campaignId}
-          values={["All", ...campaigns.map((campaign) => campaign.id)]}
-          onChange={(value) => setFilters((current) => ({ ...current, campaignId: value }))}
+          values={options(availableFilters.campaigns)}
+          onChange={(value) => updateFilter("campaignId", value)}
         />
-        <Select label="Country" value={filters.country} values={options(data.filters.countries)} onChange={(value) => setFilters((current) => ({ ...current, country: value }))} />
-        <Select label="OS" value={filters.os} values={options(data.filters.oses)} onChange={(value) => setFilters((current) => ({ ...current, os: value }))} />
-        <Select label="Format" value={filters.format} values={options(data.filters.formats)} onChange={(value) => setFilters((current) => ({ ...current, format: value }))} />
+        <Select label="Country" value={filters.country} values={options(availableFilters.countries)} onChange={(value) => updateFilter("country", value)} />
+        <Select label="OS" value={filters.os} values={options(availableFilters.oses)} onChange={(value) => updateFilter("os", value)} />
+        <Select label="Format" value={filters.format} values={options(availableFilters.formats)} onChange={(value) => updateFilter("format", value)} />
       </section>
 
       <section className="market-row">
