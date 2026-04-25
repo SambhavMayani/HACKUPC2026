@@ -10,18 +10,17 @@ export async function GET(
   const { assetPath } = await params;
   const normalizedPath = path.normalize(assetPath.join("/"));
 
-  if (normalizedPath.startsWith("..")) {
+  if (normalizedPath.startsWith("..") || path.isAbsolute(normalizedPath)) {
     return new Response("Invalid path", { status: 400 });
   }
 
-  const filePath = path.join(datasetRoot, normalizedPath);
-
   try {
+    const filePath = path.join(datasetRoot, normalizedPath);
     const buffer = await readFile(filePath);
     return new Response(buffer, {
       headers: {
-        "Content-Type": "image/png",
         "Cache-Control": "public, max-age=86400",
+        "Content-Type": "image/png",
       },
     });
   } catch {
