@@ -314,7 +314,10 @@ img {
   position: absolute;
   left: 50%;
   bottom: calc(100% + 10px);
-  width: min(340px, calc(100vw - 48px));
+  width: min(380px, calc(100vw - 48px));
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px 12px;
   padding: 12px;
   background: var(--black);
   color: #fff7e8;
@@ -328,6 +331,17 @@ img {
   transform: translate(-50%, 6px);
   transition: opacity 150ms ease, transform 150ms ease;
   z-index: 20;
+}
+
+.info-tooltip b {
+  color: #fff7e8;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.info-tooltip span {
+  color: #cfd8d1;
 }
 
 .info-button:hover .info-tooltip,

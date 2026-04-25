@@ -1010,7 +1010,16 @@ export function Dashboard({ data }: DashboardProps) {
                 <button type="button" className="info-button" aria-label="How next actions are selected">
                   <Info size={18} />
                   <span className="info-tooltip" role="tooltip">
-                    Scale means strong volume, score, and no severe fatigue. Refresh means the creative is working but performance is fading. Pause means spend is high and results are weak. Test next means useful ideas that are not clear scale, refresh, or pause candidates. If none match, this slice has no strong candidate for that action.
+                    <b>Scale</b>
+                    <span>Strong volume, strong score, no severe fatigue.</span>
+                    <b>Refresh</b>
+                    <span>Working creative, but performance is fading.</span>
+                    <b>Pause</b>
+                    <span>High spend with weak results.</span>
+                    <b>Test next</b>
+                    <span>Useful ideas that are not clear scale, refresh, or pause candidates.</span>
+                    <b>No strong candidates</b>
+                    <span>No creative in this slice matches that action rule.</span>
                   </span>
                 </button>
               </div>
