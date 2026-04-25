@@ -742,6 +742,8 @@ export function Dashboard({ data }: DashboardProps) {
   );
 
   function updateFilter(field: FilterField, value: string) {
+    setCopilotAnswer("");
+    setCopilotError("");
     setFilters((current) => sanitizeFilters(data, { ...current, [field]: value }));
   }
 
@@ -781,9 +783,18 @@ export function Dashboard({ data }: DashboardProps) {
     () => ({
       filters,
       verticals: [...new Set(ranked.map((item) => item.creative.vertical))],
+      allowedScope: {
+        advertisers: [...new Set(ranked.map((item) => item.creative.advertiser))],
+        campaignIds: [...new Set(ranked.map((item) => item.creative.campaignId))],
+        campaignLabels: [...new Set(ranked.map((item) => item.creative.campaignLabel))],
+        creativeIds: [...new Set(ranked.map((item) => item.creative.creativeId))],
+        visibleHeadlines: [...new Set(ranked.map((item) => item.creative.headline))],
+      },
       market,
       topPerformers: topPerformers.slice(0, 4).map((item) => ({
         creativeId: item.creative.creativeId,
+        campaignId: item.creative.campaignId,
+        advertiser: item.creative.advertiser,
         headline: item.creative.headline,
         action: item.action,
         reason: reasonForWinner(item),
@@ -798,6 +809,8 @@ export function Dashboard({ data }: DashboardProps) {
       })),
       fatigue: fatigue.slice(0, 4).map((item) => ({
         creativeId: item.creative.creativeId,
+        campaignId: item.creative.campaignId,
+        advertiser: item.creative.advertiser,
         headline: item.creative.headline,
         reason: reasonForFatigue(item),
         fatigueDay: item.creative.fatigueDay,
