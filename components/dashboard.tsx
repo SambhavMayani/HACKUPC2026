@@ -16,7 +16,7 @@ import {
   ShieldAlert,
   TrendingDown,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Creative, DashboardData, SegmentMetrics } from "@/lib/creative-intelligence";
 
 type DashboardProps = {
@@ -844,6 +844,7 @@ export function Dashboard({ data }: DashboardProps) {
   const [copilotLoading, setCopilotLoading] = useState(false);
   const [includeNews, setIncludeNews] = useState(false);
   const [previewCreative, setPreviewCreative] = useState<PreviewCreative | null>(null);
+  const topPerformersRef = useRef<HTMLElement | null>(null);
 
   const availableFilters = useMemo(
     () => ({
@@ -893,6 +894,9 @@ export function Dashboard({ data }: DashboardProps) {
         search: "",
       }),
     );
+    window.requestAnimationFrame(() => {
+      topPerformersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   const ranked = useMemo(() => {
@@ -1085,7 +1089,7 @@ export function Dashboard({ data }: DashboardProps) {
         </article>
       </section>
 
-      <section className="section-block">
+      <section className="section-block" ref={topPerformersRef}>
         <div className="section-heading">
           <div>
             <span className="eyebrow">Top performers</span>
