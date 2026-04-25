@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AlertTriangle, Check, CheckCircle, Dna, Grid2X2, Hourglass, List, Search, TrendingDown, TrendingUp, X, XCircle } from 'lucide-react';
 import { fmt, fmtUSD, fmtPct, statusLabel, explainPerformance, getTopTraits } from '../utils';
@@ -14,6 +14,9 @@ export default function Explorer({ data, campaignId, creativeId }) {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const gridRef = useRef(null);
+  const [gridColumns, setGridColumns] = useState(1);
+  const gridPageSize = gridColumns * 2;
   const tablePageSize = 20;
 
   const verticals = useMemo(() => [...new Set(data.creatives.map(c => c.vertical))].sort(), [data]);
@@ -59,8 +62,32 @@ export default function Explorer({ data, campaignId, creativeId }) {
     return list;
   }, [data, vertical, format, campaign, status, search, sortBy, sortDir]);
 
-  const pageCount = Math.ceil(filtered.length / tablePageSize);
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const grid = gridRef.current;
+    const updateColumns = () => {
+      const styles = window.getComputedStyle(grid);
+      const renderedColumns = styles.gridTemplateColumns.split(' ').filter(Boolean).length;
+      const gap = parseFloat(styles.columnGap) || 14;
+      const fallbackColumns = Math.floor((grid.clientWidth + gap) / (230 + gap));
+      const columns = Math.max(1, renderedColumns || fallbackColumns);
+      setGridColumns(columns);
+    };
+
+    updateColumns();
+    const observer = new ResizeObserver(updateColumns);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, []);
+
+  const pageSize = viewMode === 'grid' ? gridPageSize : tablePageSize;
+  const pageCount = Math.ceil(filtered.length / pageSize);
+  const gridItems = filtered.slice(page * gridPageSize, (page + 1) * gridPageSize);
   const tableItems = filtered.slice(page * tablePageSize, (page + 1) * tablePageSize);
+
+  useEffect(() => {
+    if (pageCount > 0 && page >= pageCount) setPage(pageCount - 1);
+  }, [page, pageCount]);
 
   const handleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -112,8 +139,8 @@ export default function Explorer({ data, campaignId, creativeId }) {
       </div>
 
       {viewMode === 'grid' ? (
-        <div className="creatives-grid">
-          {filtered.map(c => (
+        <div className="creatives-grid" ref={gridRef}>
+          {gridItems.map(c => (
             <div key={c.id} className="creative-card" onClick={() => setSelected(c)}>
               <img src={`/api/assets/${c.asset_file}`} alt={c.headline} loading="lazy" />
               <div className="info">
@@ -178,7 +205,7 @@ export default function Explorer({ data, campaignId, creativeId }) {
         </div>
       )}
 
-      {viewMode === 'table' && pageCount > 1 && (
+      {pageCount > 1 && (
         <div className="pagination">
           <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Prev</button>
           <span>Page {page + 1} of {pageCount}</span>
