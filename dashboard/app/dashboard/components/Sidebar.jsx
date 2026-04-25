@@ -36,9 +36,9 @@ export default function Sidebar({ active, onNavigate, account, insight, onSwitch
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="logo-icon">CI</div>
+        <div className="logo-icon">AT</div>
         <div>
-          <h1>Creative Intel</h1>
+          <h1>ADtonomy</h1>
           <span>by Smadex</span>
         </div>
       </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Creative Intelligence Dashboard",
+  title: "ADtonomy",
   description: "Explainable creative performance dashboard for mobile advertisers.",
 };
 

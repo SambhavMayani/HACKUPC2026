@@ -95,7 +95,7 @@ function renderEntityLinks(text, actions) {
 function initialMessages(data) {
   return [{
     role: 'assistant',
-    content: `Hey! I'm your Creative Intelligence Advisor.\n\nI've analyzed your ${data.stats.totalCreatives} creatives across ${data.stats.totalCampaigns} campaigns. Ask me anything about your performance.\n\n**Try asking:**\n- "How are my creatives doing?"\n- "Where am I wasting budget?"\n- "What creative should I make next?"\n- "Which countries work best for me?"\n- "Why is my top creative performing well?"`
+    content: `Hey! I'm your ADtonomy Advisor.\n\nI've analyzed your ${data.stats.totalCreatives} creatives across ${data.stats.totalCampaigns} campaigns. Ask me anything about your performance.\n\n**Try asking:**\n- "How are my creatives doing?"\n- "Where am I wasting budget?"\n- "What creative should I make next?"\n- "Which countries work best for me?"\n- "Why is my top creative performing well?"`
   }];
 }
 

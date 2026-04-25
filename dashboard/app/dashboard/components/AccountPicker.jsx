@@ -23,8 +23,8 @@ export default function AccountPicker({ advertisers, insights, onSelect }) {
     <div className="account-picker">
       <div className="account-shell">
         <div className="account-hero">
-          <div className="brand-mark">CI</div>
-          <h1>Creative Intelligence</h1>
+          <div className="brand-mark">AT</div>
+          <h1>ADtonomy</h1>
           <p>Select an advertiser to open its performance workspace.</p>
         </div>
 
@@ -78,7 +78,7 @@ export default function AccountPicker({ advertisers, insights, onSelect }) {
           })}
         </div>
 
-        <p className="account-powered">Smadex Creative Intelligence Platform</p>
+        <p className="account-powered">Smadex ADtonomy Platform</p>
       </div>
     </div>
   );

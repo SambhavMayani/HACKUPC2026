@@ -1016,7 +1016,7 @@ export function Dashboard({ data }: DashboardProps) {
     <main className="dashboard-shell">
       <section className="hero-band">
         <div className="hero-copy">
-          <span className="eyebrow">Smadex Creative Intelligence</span>
+          <span className="eyebrow">Smadex ADtonomy</span>
           <h1>Creative decisions for live campaign teams.</h1>
           <p>
             Rank winners, diagnose fatigue, detect repeated ideas, and turn creative metadata into

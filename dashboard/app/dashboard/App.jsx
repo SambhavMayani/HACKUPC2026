@@ -79,7 +79,7 @@ export default function App() {
   if (!data) return (
     <div className="loading">
       <div className="spinner" />
-      Loading Creative Intelligence…
+      Loading ADtonomy...
     </div>
   );
 
