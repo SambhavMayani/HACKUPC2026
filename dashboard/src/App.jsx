@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
+import AccountPicker from './components/AccountPicker';
 import Overview from './components/Overview';
 import Explorer from './components/Explorer';
 import Fatigue from './components/Fatigue';
@@ -11,7 +12,7 @@ import Copilot from './components/Copilot';
 export default function App() {
   const [data, setData] = useState(null);
   const [page, setPage] = useState('overview');
-  const [selectedAdvertiser, setSelectedAdvertiser] = useState('all');
+  const [account, setAccount] = useState(null); // the logged-in advertiser name
 
   useEffect(() => {
     fetch('/data.json')
@@ -20,73 +21,77 @@ export default function App() {
       .catch(e => console.error('Failed to load data:', e));
   }, []);
 
-  // Filter data by selected advertiser
-  const filteredData = useMemo(() => {
-    if (!data) return null;
-    if (selectedAdvertiser === 'all') return data;
+  // Scoped data: filter everything to the logged-in account
+  const scopedData = useMemo(() => {
+    if (!data || !account) return null;
 
-    const advCreatives = data.creatives.filter(c => c.advertiser === selectedAdvertiser);
-    const advCampaigns = data.campaigns.filter(c => c.advertiser === selectedAdvertiser);
-    const advCreativeIds = new Set(advCreatives.map(c => c.id));
+    const myCreatives = data.creatives.filter(c => c.advertiser === account);
+    const myCampaigns = data.campaigns.filter(c => c.advertiser === account);
+    const myCreativeIds = new Set(myCreatives.map(c => c.id));
 
-    const advTimeSeries = {};
+    const myTimeSeries = {};
     for (const [cid, ts] of Object.entries(data.timeSeries)) {
-      if (advCreativeIds.has(cid)) advTimeSeries[cid] = ts;
+      if (myCreativeIds.has(cid)) myTimeSeries[cid] = ts;
     }
 
-    const advClusters = data.clusters
-      .map(cl => ({
-        ...cl,
-        creatives: cl.creatives.filter(id => advCreativeIds.has(id)),
-      }))
+    const myClusters = data.clusters
+      .map(cl => ({ ...cl, creatives: cl.creatives.filter(id => myCreativeIds.has(id)) }))
       .filter(cl => cl.creatives.length > 0);
 
-    const advStats = {
-      totalCreatives: advCreatives.length,
-      totalCampaigns: advCampaigns.length,
-      totalAdvertisers: 1,
-      totalSpend: advCreatives.reduce((s, c) => s + c.spend, 0),
-      totalImpressions: advCreatives.reduce((s, c) => s + c.impressions, 0),
-      totalConversions: advCreatives.reduce((s, c) => s + c.conversions, 0),
-      totalRevenue: advCreatives.reduce((s, c) => s + c.revenue, 0),
+    const myStats = {
+      totalCreatives: myCreatives.length,
+      totalCampaigns: myCampaigns.length,
+      totalSpend: myCreatives.reduce((s, c) => s + c.spend, 0),
+      totalImpressions: myCreatives.reduce((s, c) => s + c.impressions, 0),
+      totalClicks: myCreatives.reduce((s, c) => s + c.clicks, 0),
+      totalConversions: myCreatives.reduce((s, c) => s + c.conversions, 0),
+      totalRevenue: myCreatives.reduce((s, c) => s + c.revenue, 0),
       statusBreakdown: {
-        top_performer: advCreatives.filter(c => c.status === 'top_performer').length,
-        stable: advCreatives.filter(c => c.status === 'stable').length,
-        fatigued: advCreatives.filter(c => c.status === 'fatigued').length,
-        underperformer: advCreatives.filter(c => c.status === 'underperformer').length,
+        top_performer: myCreatives.filter(c => c.status === 'top_performer').length,
+        stable: myCreatives.filter(c => c.status === 'stable').length,
+        fatigued: myCreatives.filter(c => c.status === 'fatigued').length,
+        underperformer: myCreatives.filter(c => c.status === 'underperformer').length,
       }
     };
 
+    const insight = data.advertiserInsights[account];
+
     return {
-      ...data,
-      creatives: advCreatives,
-      campaigns: advCampaigns,
-      timeSeries: advTimeSeries,
-      clusters: advClusters,
-      stats: advStats,
-      countryPerf: data.advertiserInsights[selectedAdvertiser]?.countryPerf || {},
-      osPerf: data.advertiserInsights[selectedAdvertiser]?.osPerf || {},
+      creatives: myCreatives,
+      campaigns: myCampaigns,
+      timeSeries: myTimeSeries,
+      clusters: myClusters,
+      mlClusters: data.mlClusters,
+      stats: myStats,
+      countryPerf: insight?.countryPerf || {},
+      osPerf: insight?.osPerf || {},
+      traitAnalysis: insight?.advTraits || data.traitAnalysis,
     };
-  }, [data, selectedAdvertiser]);
+  }, [data, account]);
 
   if (!data) return (
     <div className="loading">
       <div className="spinner" />
-      Loading Creative Intelligence Data…
+      Loading Creative Intelligence…
     </div>
   );
 
-  const advInsight = selectedAdvertiser !== 'all' ? data.advertiserInsights[selectedAdvertiser] : null;
-  const benchmark = advInsight ? data.verticalBenchmarks[advInsight.vertical] : null;
+  // Account picker screen (login simulation)
+  if (!account) {
+    return <AccountPicker advertisers={data.advertisers} insights={data.advertiserInsights} onSelect={setAccount} />;
+  }
+
+  const insight = data.advertiserInsights[account];
+  const benchmark = insight ? data.verticalBenchmarks[insight.vertical] : null;
 
   const pages = {
-    overview: <Overview data={filteredData} fullData={data} advInsight={advInsight} benchmark={benchmark} onNavigate={setPage} selectedAdvertiser={selectedAdvertiser} />,
-    explorer: <Explorer data={filteredData} />,
-    fatigue: <Fatigue data={filteredData} advInsight={advInsight} />,
-    explainability: <Explainability data={filteredData} advInsight={advInsight} benchmark={benchmark} />,
-    recommendations: <Recommendations data={filteredData} advInsight={advInsight} benchmark={benchmark} />,
-    clusters: <Clusters data={filteredData} />,
-    copilot: <Copilot data={filteredData} advInsight={advInsight} selectedAdvertiser={selectedAdvertiser} />,
+    overview: <Overview data={scopedData} insight={insight} benchmark={benchmark} onNavigate={setPage} />,
+    explorer: <Explorer data={scopedData} />,
+    fatigue: <Fatigue data={scopedData} insight={insight} />,
+    explainability: <Explainability data={scopedData} insight={insight} benchmark={benchmark} />,
+    recommendations: <Recommendations data={scopedData} insight={insight} benchmark={benchmark} />,
+    clusters: <Clusters data={scopedData} />,
+    copilot: <Copilot data={scopedData} insight={insight} account={account} />,
   };
 
   return (
@@ -94,10 +99,9 @@ export default function App() {
       <Sidebar
         active={page}
         onNavigate={setPage}
-        advertisers={data.advertisers}
-        selectedAdvertiser={selectedAdvertiser}
-        onSelectAdvertiser={setSelectedAdvertiser}
-        advInsight={advInsight}
+        account={account}
+        insight={insight}
+        onSwitchAccount={() => setAccount(null)}
       />
       <main className="main-content">
         {pages[page] || pages.overview}

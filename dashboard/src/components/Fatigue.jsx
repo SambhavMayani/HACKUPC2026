@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { fmtPct, fmtUSD, statusLabel, CHART_COLORS } from '../utils';
 
-export default function Fatigue({ data, advInsight }) {
+export default function Fatigue({ data, insight }) {
   const [selectedId, setSelectedId] = useState(null);
 
   const fatigued = useMemo(() =>
@@ -64,8 +64,8 @@ export default function Fatigue({ data, advInsight }) {
   return (
     <div>
       <div className="page-header">
-        <h2>⏳ Creative Fatigue Detection</h2>
-        <p>Identify creatives losing effectiveness and at-risk assets before they waste budget</p>
+        <h2>⏳ Your Fatigue Alerts</h2>
+        <p>These creatives are losing effectiveness — act now before they waste your budget</p>
       </div>
 
       <div className="stats-row">
@@ -133,7 +133,7 @@ export default function Fatigue({ data, advInsight }) {
               <img src={`/${c.asset_file}`} alt="" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 4 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.headline}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.advertiser} · Day {c.fatigue_day} · {fmtUSD(c.spend)}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.format} · Day {c.fatigue_day} · {fmtUSD(c.spend)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>{(c.ctr_decay * 100).toFixed(0)}%</div>
@@ -189,7 +189,7 @@ export default function Fatigue({ data, advInsight }) {
                 <img src={`/${c.asset_file}`} alt="" loading="lazy" />
                 <div className="info">
                   <h4>{c.headline}</h4>
-                  <div className="meta">{c.advertiser} · {c.format} · {fmtUSD(c.spend)}</div>
+                  <div className="meta">{c.format} · {c.theme} · {fmtUSD(c.spend)}</div>
                   <div className="metrics">
                     <div className="metric"><div className="label">CTR Decay</div><div className="val" style={{ color: 'var(--red)' }}>{(c.ctr_decay * 100).toFixed(0)}%</div></div>
                     <div className="metric"><div className="label">Days Active</div><div className="val">{c.days_active}</div></div>

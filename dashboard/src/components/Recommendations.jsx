@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { fmtPct, fmtUSD, fmt, statusLabel } from '../utils';
 
-export default function Recommendations({ data, advInsight, benchmark }) {
+export default function Recommendations({ data, insight, benchmark }) {
   const recs = useMemo(() => {
     const list = [];
     const creatives = data.creatives;
@@ -86,6 +86,32 @@ export default function Recommendations({ data, advInsight, benchmark }) {
       });
     }
 
+    // CLUSTER: underperformers in high-perf clusters → optimize, not kill
+    if (data.mlClusters?.combined) {
+      const ml = data.mlClusters.combined;
+      const myIds = new Set(creatives.map(c => c.id));
+      for (const cl of ml.clusters) {
+        if (cl.avgPerf < 0.5) continue; // only high-perf clusters
+        const myInCluster = cl.creativeIds
+          .filter(id => myIds.has(id))
+          .map(id => creatives.find(c => c.id === id))
+          .filter(Boolean);
+        const underperformersInGoodCluster = myInCluster
+          .filter(c => c.status === 'underperformer' || (c.perf_score < cl.avgPerf * 0.6));
+        underperformersInGoodCluster.slice(0, 2).forEach(c => {
+          const bestInCluster = myInCluster.filter(x => x.id !== c.id).sort((a, b) => b.perf_score - a.perf_score)[0];
+          list.push({
+            action: 'refresh',
+            creative: c,
+            title: `Optimize "${c.headline}" (Cluster insight)`,
+            reason: `This creative is in a high-performing cluster (avg score ${(cl.avgPerf * 100).toFixed(0)}) but scores only ${(c.perf_score * 100).toFixed(0)}. ${bestInCluster ? `Similar creative "${bestInCluster.headline}" scores ${(bestInCluster.perf_score * 100).toFixed(0)} — study its traits.` : 'Align with cluster patterns.'}`,
+            impact: 'medium',
+            savingsOrGain: 0,
+          });
+        });
+      }
+    }
+
     return list;
   }, [data]);
 
@@ -102,8 +128,8 @@ export default function Recommendations({ data, advInsight, benchmark }) {
   return (
     <div>
       <div className="page-header">
-        <h2>🎯 Recommendation Engine</h2>
-        <p>Actionable recommendations to optimize your creative portfolio</p>
+        <h2>🎯 What You Should Do Next</h2>
+        <p>Personalized actions to maximize your creative ROI</p>
       </div>
 
       <div className="stats-row">
@@ -157,7 +183,7 @@ export default function Recommendations({ data, advInsight, benchmark }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--bg-secondary)', borderRadius: 8 }}>
                 <img src={`/${rec.creative.asset_file}`} alt="" style={{ width: 56, height: 42, objectFit: 'cover', borderRadius: 4 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{rec.creative.advertiser}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{rec.creative.headline}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                     {rec.creative.format} · {rec.creative.vertical} · ROAS {rec.creative.roas.toFixed(2)}x
                   </div>

@@ -1,19 +1,20 @@
 import { fmtUSD } from '../utils';
 
-export default function Sidebar({ active, onNavigate, advertisers, selectedAdvertiser, onSelectAdvertiser, advInsight }) {
-  const items = [
-    { id: 'overview', icon: '📊', label: 'Overview' },
-    { id: 'explorer', icon: '🔍', label: 'Performance Explorer' },
-    { id: 'fatigue', icon: '⏳', label: 'Fatigue Detection' },
-    { id: 'explainability', icon: '💡', label: 'Explainability' },
-    { id: 'recommendations', icon: '🎯', label: 'Recommendations' },
-    { id: 'clusters', icon: '🧩', label: 'Clusters' },
-    { id: 'copilot', icon: '🤖', label: 'AI Copilot' },
-  ];
+const verticalIcons = {
+  gaming: '🎮', ecommerce: '🛒', fintech: '💳',
+  travel: '✈️', food_delivery: '🍔', entertainment: '🎬',
+};
 
-  const verticalIcons = {
-    gaming: '🎮', ecommerce: '🛒', fintech: '💳', travel: '✈️', food_delivery: '🍔', entertainment: '🎬'
-  };
+export default function Sidebar({ active, onNavigate, account, insight, onSwitchAccount }) {
+  const items = [
+    { id: 'overview', icon: '📊', label: 'My Dashboard' },
+    { id: 'explorer', icon: '🔍', label: 'My Creatives' },
+    { id: 'fatigue', icon: '⏳', label: 'Fatigue Alerts' },
+    { id: 'explainability', icon: '💡', label: 'Why It Works' },
+    { id: 'recommendations', icon: '🎯', label: 'What To Do Next' },
+    { id: 'clusters', icon: '🧩', label: 'Creative Groups' },
+    { id: 'copilot', icon: '🤖', label: 'Ask AI' },
+  ];
 
   return (
     <aside className="sidebar">
@@ -25,61 +26,50 @@ export default function Sidebar({ active, onNavigate, advertisers, selectedAdver
         </div>
       </div>
 
-      {/* Company Selector */}
-      <div style={{ padding: '12px 12px 0' }}>
-        <div className="nav-section">Company</div>
-        <select
-          className="filter-select"
-          style={{ width: '100%', marginBottom: 8 }}
-          value={selectedAdvertiser}
-          onChange={e => onSelectAdvertiser(e.target.value)}
-        >
-          <option value="all">All Companies</option>
-          {advertisers.map(a => (
-            <option key={a.id} value={a.name}>
-              {verticalIcons[a.vertical] || '📦'} {a.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Company quick stats when selected */}
-      {advInsight && (
-        <div style={{ padding: '0 12px 8px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
-            <span style={{ fontSize: 24 }}>{verticalIcons[advInsight.vertical] || '📦'}</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{advInsight.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{advInsight.vertical} · {advInsight.region}</div>
-            </div>
+      {/* Account info */}
+      <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 10,
+            background: 'var(--bg-primary)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
+          }}>
+            {verticalIcons[insight?.vertical] || '📦'}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
-            <div style={{ background: 'var(--bg-card)', borderRadius: 6, padding: '6px 8px' }}>
-              <div style={{ color: 'var(--text-muted)' }}>ROAS</div>
-              <div style={{ fontWeight: 700, color: advInsight.roas >= 2 ? 'var(--green)' : advInsight.roas >= 1 ? 'var(--blue)' : 'var(--red)' }}>
-                {advInsight.roas.toFixed(2)}x
-              </div>
-            </div>
-            <div style={{ background: 'var(--bg-card)', borderRadius: 6, padding: '6px 8px' }}>
-              <div style={{ color: 'var(--text-muted)' }}>Spend</div>
-              <div style={{ fontWeight: 700 }}>{fmtUSD(advInsight.totalSpend)}</div>
-            </div>
-            <div style={{ background: 'var(--bg-card)', borderRadius: 6, padding: '6px 8px' }}>
-              <div style={{ color: 'var(--text-muted)' }}>Creatives</div>
-              <div style={{ fontWeight: 700 }}>{advInsight.totalCreatives}</div>
-            </div>
-            <div style={{ background: 'var(--bg-card)', borderRadius: 6, padding: '6px 8px' }}>
-              <div style={{ color: 'var(--text-muted)' }}>Fatigued</div>
-              <div style={{ fontWeight: 700, color: advInsight.statusBreakdown.fatigued > 0 ? 'var(--yellow)' : 'var(--green)' }}>
-                {advInsight.statusBreakdown.fatigued}
-              </div>
-            </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{account}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{insight?.vertical} · {insight?.region}</div>
           </div>
         </div>
-      )}
+
+        {insight && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
+            <div style={{ background: 'var(--bg-primary)', borderRadius: 8, padding: '7px 9px' }}>
+              <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>ROAS</div>
+              <div style={{ fontWeight: 700, color: insight.roas >= 1.5 ? 'var(--green)' : insight.roas >= 1 ? 'var(--blue)' : 'var(--red)' }}>
+                {insight.roas.toFixed(2)}x
+              </div>
+            </div>
+            <div style={{ background: 'var(--bg-primary)', borderRadius: 8, padding: '7px 9px' }}>
+              <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Spend</div>
+              <div style={{ fontWeight: 700 }}>{fmtUSD(insight.totalSpend)}</div>
+            </div>
+            <div style={{ background: 'var(--bg-primary)', borderRadius: 8, padding: '7px 9px' }}>
+              <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Creatives</div>
+              <div style={{ fontWeight: 700 }}>{insight.totalCreatives}</div>
+            </div>
+            <div style={{ background: 'var(--bg-primary)', borderRadius: 8, padding: '7px 9px' }}>
+              <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Fatigued</div>
+              <div style={{ fontWeight: 700, color: insight.statusBreakdown.fatigued > 0 ? 'var(--yellow)' : 'var(--green)' }}>
+                {insight.statusBreakdown.fatigued}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <nav className="sidebar-nav">
-        <div className="nav-section">Dashboard</div>
+        <div className="nav-section">Navigation</div>
         {items.map(item => (
           <div
             key={item.id}
@@ -91,6 +81,18 @@ export default function Sidebar({ active, onNavigate, advertisers, selectedAdver
           </div>
         ))}
       </nav>
+
+      {/* Switch account */}
+      <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
+        <div
+          className="nav-item"
+          onClick={onSwitchAccount}
+          style={{ color: 'var(--text-muted)', fontSize: 12 }}
+        >
+          <span className="icon">🔄</span>
+          <span>Switch Account</span>
+        </div>
+      </div>
     </aside>
   );
 }
