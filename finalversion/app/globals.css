@@ -485,6 +485,84 @@ button { cursor: pointer; }
   flex-direction: column;
   height: calc(100vh - 118px);
 }
+.copilot-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.quick-question {
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-solid);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: border-color var(--transition), color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+.quick-question:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #fffdf9;
+}
+.news-toggle {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+.news-toggle:hover,
+.news-toggle:has(input:focus-visible) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.news-toggle:has(input:checked) {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.news-toggle input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-solid);
+  position: relative;
+  flex: 0 0 auto;
+  transition: background var(--transition), border-color var(--transition);
+}
+.news-toggle input::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: inherit;
+  background: transparent;
+  transition: background var(--transition), transform var(--transition);
+}
+.news-toggle input:checked {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.16);
+}
+.news-toggle input:checked::after {
+  background: var(--primary-foreground);
+}
 .copilot-messages {
   flex: 1;
   overflow-y: auto;
@@ -691,6 +769,8 @@ button { cursor: pointer; }
   .creatives-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   .stats-row { grid-template-columns: repeat(auto-fit, minmax(142px, 1fr)); }
   .filters-bar > div[style*="margin-left"] { margin-left: 0 !important; width: 100%; }
+  .copilot-toolbar { align-items: stretch; }
+  .news-toggle { margin-left: 0; width: 100%; justify-content: center; }
   .search-input { width: 100%; }
   .account-list { grid-template-columns: 1fr; }
 }

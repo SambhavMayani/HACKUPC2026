@@ -197,17 +197,9 @@ export default function Copilot({
       </div>
 
       <div className="copilot-container">
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+        <div className="copilot-toolbar">
           {quickQuestions.map((q, i) => (
-            <button key={i} onClick={() => onInputChange(q)}
-              style={{
-                background: 'var(--bg-card-solid)', border: '1px solid var(--border)', borderRadius: 20,
-                padding: '6px 14px', color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif', transition: 'var(--transition)',
-              }}
-              onMouseOver={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.color = 'var(--accent)'; }}
-              onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-secondary)'; }}
-            >
+            <button key={i} type="button" className="quick-question" onClick={() => onInputChange(q)}>
               {q}
             </button>
           ))}
