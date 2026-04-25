@@ -833,10 +833,11 @@ img {
   width: min(980px, 100%);
   max-height: min(92vh, 920px);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(180px, auto) auto minmax(0, auto);
   border: 1px solid rgba(255, 250, 240, 0.34);
   background: var(--black);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.46);
+  overflow: hidden;
 }
 
 .preview-header {
@@ -885,11 +886,12 @@ img {
   display: grid;
   place-items: center;
   padding: 0 16px;
+  overflow: hidden;
 }
 
 .preview-image-wrap img {
   max-width: 100%;
-  max-height: calc(92vh - 150px);
+  max-height: min(50vh, 500px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -913,6 +915,8 @@ img {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   padding: 0 16px 16px;
+  max-height: 28vh;
+  overflow: auto;
 }
 
 .preview-copy div {

@@ -691,7 +691,7 @@ function renderPlainTextWithEntityLinks(text: string, actions?: MarkdownActions)
   }
 
   const nodes: React.ReactNode[] = [];
-  const pattern = /\b(Creative|Campaign)\s+(\d+)\b/gi;
+  const pattern = /\b(Creative(?:\s+IDs?|\s+ID)?|Campaigns?)\s+((?:\d{5,6})(?:\s*(?:,|and|&)\s*\d{5,6})*)/gi;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -700,31 +700,39 @@ function renderPlainTextWithEntityLinks(text: string, actions?: MarkdownActions)
       nodes.push(text.slice(lastIndex, match.index));
     }
 
-    const kind = match[1].toLowerCase();
-    const id = match[2];
-    const label = `${match[1]} ${id}`;
-    const canLink = kind === "creative" ? actions.hasCreative(id) : actions.hasCampaign(id);
+    const kind = match[1].toLowerCase().startsWith("creative") ? "creative" : "campaign";
+    const prefix = match[1];
+    const ids = match[2].match(/\d{5,6}/g) ?? [];
 
-    nodes.push(
-      canLink ? (
-        <button
-          key={`${kind}-${id}-${match.index}`}
-          type="button"
-          className="copilot-entity-link"
-          onClick={() => {
-            if (kind === "creative") {
-              actions.onPreviewCreative(id);
-              return;
-            }
-            actions.onApplyCampaign(id);
-          }}
-        >
-          {label}
-        </button>
-      ) : (
-        label
-      ),
-    );
+    nodes.push(`${prefix} `);
+    ids.forEach((id, idIndex) => {
+      const separator = idIndex === 0 ? "" : idIndex === ids.length - 1 ? " and " : ", ";
+      if (separator) {
+        nodes.push(separator);
+      }
+
+      const canLink = kind === "creative" ? actions.hasCreative(id) : actions.hasCampaign(id);
+      nodes.push(
+        canLink ? (
+          <button
+            key={`${kind}-${id}-${match?.index ?? 0}-${idIndex}`}
+            type="button"
+            className="copilot-entity-link"
+            onClick={() => {
+              if (kind === "creative") {
+                actions.onPreviewCreative(id);
+                return;
+              }
+              actions.onApplyCampaign(id);
+            }}
+          >
+            {id}
+          </button>
+        ) : (
+          id
+        ),
+      );
+    });
     lastIndex = pattern.lastIndex;
   }
 

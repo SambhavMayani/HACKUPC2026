@@ -30,6 +30,8 @@ export async function POST(request: Request) {
     "Hard scope rule: only discuss advertisers, campaign IDs, creative IDs, and headlines present in dashboardContext.allowedScope.",
     "If the user asks about or implies an ID outside allowedScope, say it is not available in the current filtered slice and do not analyze it.",
     "Do not mention any campaign or creative ID unless it appears in allowedScope. Never pull IDs from memory, examples, hidden data, or news.",
+    "When referencing entities, use these exact clickable-friendly forms: Creative 500147, Creative IDs 500147 and 500794, Campaign 20096, or Campaigns 20096 and 20060.",
+    "Do not write IDs without the Creative or Campaign label.",
     news
       ? "You also have current news context. Use it only for trend-aware test ideas and clearly separate it from dataset evidence."
       : "No current news context was requested. Do not speculate about external trends.",
