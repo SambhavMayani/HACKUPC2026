@@ -111,3 +111,16 @@ export function extractJsonArray(content: string) {
 
   return candidate.slice(start, end + 1);
 }
+
+export function extractJsonObject(content: string) {
+  const fencedMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fencedMatch?.[1] ?? content;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Model did not return a JSON object.");
+  }
+
+  return candidate.slice(start, end + 1);
+}
