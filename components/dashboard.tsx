@@ -32,6 +32,10 @@ function formatDelta(value: number) {
   return value < 0 ? `-${pct}` : `+${pct}`;
 }
 
+function formatConfidence(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
 function getOptions(values: string[]) {
   return ["All", ...values];
 }
@@ -68,6 +72,7 @@ function CreativeCard({ creative }: { creative: MarketInsight["topCreatives"][nu
       <div className="creative-copy">
         <div className="pill-row">
           <span className="pill strong">#{creative.rank}</span>
+          <span className="pill">{creative.creativeId}</span>
           <span className="pill">{creative.format}</span>
           <span className="pill">{creative.country}</span>
           <span className="pill">{creative.os}</span>
@@ -95,6 +100,10 @@ function CreativeCard({ creative }: { creative: MarketInsight["topCreatives"][nu
       </div>
     </article>
   );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return <div className="empty-state">{label}</div>;
 }
 
 function RiskCard({
@@ -160,6 +169,9 @@ export function Dashboard({ data }: DashboardProps) {
     format: "All",
   });
   const [aiSummary, setAiSummary] = useState<string>("");
+  const [copilotQuestion, setCopilotQuestion] = useState(
+    "Which creative should I scale this week, and what should I rotate?",
+  );
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string>("");
 
@@ -183,7 +195,7 @@ export function Dashboard({ data }: DashboardProps) {
     );
   }, [data.defaultMarket, data.markets, filters]);
 
-  async function generateAiSummary() {
+  async function askCopilot(question?: string) {
     setLoadingAi(true);
     setAiError("");
 
@@ -193,7 +205,7 @@ export function Dashboard({ data }: DashboardProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(market.key),
+        body: JSON.stringify({ ...market.key, question }),
       });
       const payload = (await response.json()) as { content?: string; error?: string };
 
@@ -214,10 +226,10 @@ export function Dashboard({ data }: DashboardProps) {
       <section className="hero">
         <div className="hero-copy">
           <span className="eyebrow">Smadex Creative Intelligence</span>
-          <h1>Creative decisions, not just creative data.</h1>
+          <h1>Creative command center for mobile growth teams.</h1>
           <p>
-            This copilot ranks winners, flags fatigue, spots repetition, and turns the dataset into
-            clear next-test recommendations a marketer can act on.
+            A working prototype that ranks winners, diagnoses fatigue, clusters similar concepts,
+            and converts performance data into scale, rotate, and test decisions.
           </p>
         </div>
         <div className="hero-metrics">
@@ -281,20 +293,34 @@ export function Dashboard({ data }: DashboardProps) {
 
       <section className="summary-grid">
         <article className="summary-card accent">
-          <span>Answer 1</span>
-          <h2>Which creatives are working best?</h2>
+          <span>Performance signal</span>
+          <h2>Top performers</h2>
           <p>{market.narrative.bestSummary}</p>
         </article>
         <article className="summary-card amber">
-          <span>Answer 2</span>
-          <h2>Which creatives look repetitive or tired?</h2>
+          <span>Risk signal</span>
+          <h2>Fatigue and repetition</h2>
           <p>{market.narrative.riskSummary}</p>
         </article>
         <article className="summary-card emerald">
-          <span>Answer 3</span>
-          <h2>What should we test next?</h2>
+          <span>Next move</span>
+          <h2>Testing hypothesis</h2>
           <p>{market.narrative.nextTestSummary}</p>
         </article>
+      </section>
+
+      <section className="action-strip" aria-label="Recommended actions">
+        {market.actionQueue.map((item) => (
+          <article key={`${item.action}-${item.creativeId ?? item.title}`} className={`action-card ${item.action.toLowerCase()}`}>
+            <span className="action-label">{item.action}</span>
+            <h3>{item.title}</h3>
+            <p>{item.rationale}</p>
+            <div className="confidence">
+              <span>Confidence</span>
+              <strong>{formatConfidence(item.confidence)}</strong>
+            </div>
+          </article>
+        ))}
       </section>
 
       <section className="board">
@@ -323,9 +349,13 @@ export function Dashboard({ data }: DashboardProps) {
           </div>
         </div>
         <div className="creative-grid">
-          {market.topCreatives.map((creative) => (
-            <CreativeCard key={`${creative.creativeId}-${creative.country}-${creative.os}`} creative={creative} />
-          ))}
+          {market.topCreatives.length > 0 ? (
+            market.topCreatives.map((creative) => (
+              <CreativeCard key={`${creative.creativeId}-${creative.country}-${creative.os}`} creative={creative} />
+            ))
+          ) : (
+            <EmptyState label="No top performers match this exact filter. Broaden the slice to see stronger signals." />
+          )}
         </div>
       </section>
 
@@ -336,9 +366,13 @@ export function Dashboard({ data }: DashboardProps) {
             <h2>Creatives starting to wear out</h2>
           </div>
           <div className="risk-grid">
-            {market.fatiguedCreatives.map((item) => (
-              <RiskCard key={`fatigue-${item.creativeId}`} item={item} title="Tired" tone="amber" />
-            ))}
+            {market.fatiguedCreatives.length > 0 ? (
+              market.fatiguedCreatives.map((item) => (
+                <RiskCard key={`fatigue-${item.creativeId}`} item={item} title="Tired" tone="amber" />
+              ))
+            ) : (
+              <EmptyState label="No clear fatigue risk in this filtered view." />
+            )}
           </div>
         </div>
         <div>
@@ -347,9 +381,13 @@ export function Dashboard({ data }: DashboardProps) {
             <h2>Creatives that feel repetitive</h2>
           </div>
           <div className="risk-grid">
-            {market.repetitiveCreatives.map((item) => (
-              <RiskCard key={`repeat-${item.creativeId}`} item={item} title="Repetitive" tone="violet" />
-            ))}
+            {market.repetitiveCreatives.length > 0 ? (
+              market.repetitiveCreatives.map((item) => (
+                <RiskCard key={`repeat-${item.creativeId}`} item={item} title="Repetitive" tone="violet" />
+              ))
+            ) : (
+              <EmptyState label="No high-overlap creative cluster in this slice." />
+            )}
           </div>
         </div>
       </section>
@@ -378,15 +416,28 @@ export function Dashboard({ data }: DashboardProps) {
         <article className="ai-card">
           <div className="section-heading">
             <span className="eyebrow">AI copilot</span>
-            <h2>Explain this slice with Gemini</h2>
+            <h2>Ask the creative copilot</h2>
           </div>
           <p>
-            Uses the Hack Club proxy with <code>google/gemini-3-flash-preview</code> to turn the
-            current filtered market into a marketer-ready brief.
+            Ask plain-English questions about the current filter. The copilot answers using the
+            visible winners, fatigue signals, clusters, and recommendations.
           </p>
-          <button type="button" onClick={generateAiSummary} disabled={loadingAi}>
-            {loadingAi ? "Generating brief..." : "Generate AI brief"}
-          </button>
+          <div className="prompt-row">
+            <textarea
+              value={copilotQuestion}
+              onChange={(event) => setCopilotQuestion(event.target.value)}
+              rows={4}
+              aria-label="Ask the AI copilot"
+            />
+            <div className="button-row">
+              <button type="button" onClick={() => askCopilot(copilotQuestion)} disabled={loadingAi}>
+                {loadingAi ? "Thinking..." : "Ask copilot"}
+              </button>
+              <button type="button" onClick={() => askCopilot()} disabled={loadingAi}>
+                Generate brief
+              </button>
+            </div>
+          </div>
           {aiError ? <p className="error-box">{aiError}</p> : null}
           {aiSummary ? <pre className="ai-output">{aiSummary}</pre> : null}
         </article>

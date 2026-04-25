@@ -123,6 +123,14 @@ type Recommendation = {
   supportingSignal: string;
 };
 
+type ActionItem = {
+  action: "Scale" | "Rotate" | "Test";
+  creativeId?: string;
+  title: string;
+  rationale: string;
+  confidence: number;
+};
+
 export type MarketInsight = {
   key: {
     advertiser: string;
@@ -175,6 +183,7 @@ export type MarketInsight = {
     format: string;
   }>;
   nextTests: Recommendation[];
+  actionQueue: ActionItem[];
 };
 
 export type DashboardData = {
@@ -447,6 +456,40 @@ function buildMarketInsight(
     ? `${fatigued[0]?.headline ?? repetitive[0]?.creative.headline} is the clearest risk signal here, with decay or similarity patterns suggesting the audience has seen too much of the same idea.`
     : "This slice has limited fatigue and repetition signals compared with the broader portfolio.";
   const nextTests = recommendationSignals(filteredCreatives);
+  const actionQueue: ActionItem[] = [
+    ...(top[0]
+      ? [
+          {
+            action: "Scale" as const,
+            creativeId: top[0].creative.creativeId,
+            title: top[0].creative.headline,
+            rationale: `Strongest blended score in this view: ${formatMetric(top[0].ctr, "pct")} CTR, ${formatMetric(top[0].cvr, "pct")} CVR, ${top[0].roas.toFixed(2)}x ROAS.`,
+            confidence: Math.min(0.96, 0.62 + top[0].score * 2),
+          },
+        ]
+      : []),
+    ...(fatigued[0]
+      ? [
+          {
+            action: "Rotate" as const,
+            creativeId: fatigued[0].creativeId,
+            title: fatigued[0].headline,
+            rationale: `Performance is decaying: CTR ${formatMetric(fatigued[0].ctrDecayPct, "delta")} and CVR ${formatMetric(fatigued[0].cvrDecayPct, "delta")}. Keep the message, refresh the opening hook.`,
+            confidence: Math.min(0.95, 0.7 + Math.abs(fatigued[0].ctrDecayPct) / 3),
+          },
+        ]
+      : []),
+    ...(nextTests[0]
+      ? [
+          {
+            action: "Test" as const,
+            title: nextTests[0].title,
+            rationale: nextTests[0].hypothesis,
+            confidence: 0.74,
+          },
+        ]
+      : []),
+  ];
 
   return {
     key,
@@ -494,6 +537,7 @@ function buildMarketInsight(
       format: creative.format,
     })),
     nextTests,
+    actionQueue,
   } satisfies MarketInsight;
 }
 

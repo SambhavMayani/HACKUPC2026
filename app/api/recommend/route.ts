@@ -7,6 +7,7 @@ type RequestBody = {
   country: string;
   os: string;
   format: string;
+  question?: string;
 };
 
 export async function POST(request: Request) {
@@ -21,28 +22,31 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as RequestBody;
   const data = await getDashboardData();
-  const market = data.markets.find(
+  const market =
+    data.markets.find(
     (entry) =>
       entry.key.advertiser === body.advertiser &&
       entry.key.campaignId === body.campaignId &&
       entry.key.country === body.country &&
       entry.key.os === body.os &&
       entry.key.format === body.format,
-  );
+    ) ?? data.defaultMarket;
 
   if (!market) {
     return NextResponse.json({ error: "No matching market slice found." }, { status: 404 });
   }
 
+  const userQuestion = body.question?.trim();
   const prompt = [
     "You are an explainable creative strategist for mobile advertising.",
-    "You will receive a summarized market slice. Return a crisp marketer-ready answer in plain English.",
-    "Format exactly as Markdown with these sections:",
-    "## What is winning",
-    "## What feels repetitive or tired",
-    "## What to test next",
-    "Each section must have 2-4 bullets. Keep the advice specific and tied to the evidence.",
-    "Do not mention missing data or caveats unless absolutely necessary.",
+    "You will receive a summarized market slice from a Creative Intelligence dashboard.",
+    userQuestion
+      ? `Answer this marketer question directly: "${userQuestion}".`
+      : "Return a crisp marketer-ready brief in plain English.",
+    userQuestion
+      ? "Use 3-6 bullets. Tie every recommendation to a visible data signal. If the question asks for an action, include Scale, Rotate, or Test language."
+      : "Format exactly as Markdown with these sections:\n## What is winning\n## What feels repetitive or tired\n## What to test next\nEach section must have 2-4 bullets.",
+    "Be specific, practical, and explainable. Do not invent creatives or metrics that are not in the data.",
     "Here is the data:",
     JSON.stringify(market, null, 2),
   ].join("\n\n");

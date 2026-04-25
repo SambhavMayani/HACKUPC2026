@@ -7,9 +7,11 @@
   --text: #f6f8ff;
   --muted: #9fb1d9;
   --cyan: #66e5ff;
-  --violet: #9f84ff;
+  --violet: #b59cff;
   --amber: #ffbd70;
   --emerald: #7ef2a7;
+  --red: #ff7f7f;
+  --ink: #07111f;
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
 }
 
@@ -24,12 +26,12 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Optima, Candara, "Segoe UI", sans-serif;
   color: var(--text);
   background:
     radial-gradient(circle at top left, rgba(102, 229, 255, 0.18), transparent 22%),
-    radial-gradient(circle at top right, rgba(159, 132, 255, 0.22), transparent 25%),
-    linear-gradient(180deg, #091221 0%, #06101c 52%, #040812 100%);
+    radial-gradient(circle at top right, rgba(255, 189, 112, 0.18), transparent 25%),
+    linear-gradient(180deg, #091221 0%, #0a1720 52%, #040812 100%);
 }
 
 body::before {
@@ -50,7 +52,8 @@ img {
 }
 
 button,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -85,7 +88,7 @@ pre {
   grid-template-columns: 1.5fr 1fr;
   gap: 28px;
   padding: 32px;
-  border-radius: 28px;
+  border-radius: 8px;
 }
 
 .hero-copy h1,
@@ -96,8 +99,8 @@ pre {
 .recommendation-card h2 {
   margin: 0;
   font-size: clamp(1.8rem, 3.5vw, 4.6rem);
-  line-height: 0.95;
-  letter-spacing: -0.05em;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .hero-copy p,
@@ -168,7 +171,7 @@ pre {
   gap: 14px;
   margin-top: 22px;
   padding: 18px;
-  border-radius: 24px;
+  border-radius: 8px;
 }
 
 .filter {
@@ -177,12 +180,24 @@ pre {
 }
 
 .filter select,
-.ai-card button {
+.ai-card button,
+.ai-card textarea {
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid rgba(161, 188, 255, 0.16);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
+}
+
+.filter select option {
+  color: var(--ink);
+}
+
+.ai-card textarea {
+  width: 100%;
+  min-height: 118px;
+  resize: vertical;
+  line-height: 1.45;
 }
 
 .summary-grid {
@@ -192,7 +207,7 @@ pre {
 
 .summary-card {
   padding: 24px;
-  border-radius: 24px;
+  border-radius: 8px;
 }
 
 .summary-card.accent {
@@ -212,7 +227,7 @@ pre {
 .ai-card {
   margin-top: 22px;
   padding: 24px;
-  border-radius: 28px;
+  border-radius: 8px;
 }
 
 .board-header {
@@ -220,6 +235,80 @@ pre {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-end;
+}
+
+.action-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.action-card {
+  display: grid;
+  min-height: 220px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(8, 22, 39, 0.88));
+  box-shadow: var(--shadow);
+}
+
+.action-card.scale {
+  border-color: rgba(126, 242, 167, 0.34);
+}
+
+.action-card.rotate {
+  border-color: rgba(255, 189, 112, 0.36);
+}
+
+.action-card.test {
+  border-color: rgba(102, 229, 255, 0.34);
+}
+
+.action-label {
+  width: fit-content;
+  height: 28px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--text);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.action-card h3 {
+  margin: 18px 0 8px;
+  font-size: 1.28rem;
+}
+
+.action-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.confidence {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-end;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.confidence span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.confidence strong {
+  font-size: 1.6rem;
 }
 
 .mini-stats {
@@ -236,13 +325,14 @@ pre {
 
 .creative-card {
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 8px;
 }
 
 .creative-card img {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .creative-copy {
@@ -310,7 +400,7 @@ pre {
 .risk-card,
 .test-card {
   padding: 18px;
-  border-radius: 20px;
+  border-radius: 8px;
 }
 
 .risk-card.amber {
@@ -338,9 +428,21 @@ pre {
   margin-top: 14px;
 }
 
+.prompt-row {
+  display: grid;
+  gap: 12px;
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .ai-card button {
   margin-top: 8px;
   cursor: pointer;
+  min-height: 48px;
 }
 
 .ai-card button:disabled {
@@ -352,7 +454,7 @@ pre {
 .error-box {
   margin: 16px 0 0;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 8px;
   white-space: pre-wrap;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(161, 188, 255, 0.12);
@@ -362,13 +464,22 @@ pre {
   color: #ffc7c7;
 }
 
+.empty-state {
+  padding: 18px;
+  border: 1px dashed rgba(161, 188, 255, 0.24);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.035);
+}
+
 @media (max-width: 1100px) {
   .hero,
   .split-section,
   .recommendation-layout,
   .summary-grid,
   .creative-grid,
-  .filters-panel {
+  .filters-panel,
+  .action-strip {
     grid-template-columns: 1fr;
   }
 
@@ -397,7 +508,7 @@ pre {
   .ai-card,
   .filters-panel {
     padding: 18px;
-    border-radius: 20px;
+    border-radius: 8px;
   }
 
   .hero-copy h1,
