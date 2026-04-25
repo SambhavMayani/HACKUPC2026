@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { DashboardData, MarketInsight } from "@/lib/creative-intelligence";
+import type { CampaignGroup, DashboardData, MarketInsight } from "@/lib/creative-intelligence";
 
 type DashboardProps = {
   data: DashboardData;
@@ -13,6 +13,20 @@ type Filters = {
   country: string;
   os: string;
   format: string;
+};
+
+type CampaignSort = "roas" | "spend" | "ctr" | "fatigue";
+
+type AggregatedCampaign = Omit<
+  CampaignGroup,
+  "country" | "os" | "format" | "ctr" | "cvr" | "roas" | "creativeIds" | "fatiguedCreativeIds"
+> & {
+  ctr: number;
+  cvr: number;
+  roas: number;
+  countries: string[];
+  oses: string[];
+  formats: string[];
 };
 
 function formatPct(value: number) {
@@ -34,6 +48,32 @@ function formatDelta(value: number) {
 
 function formatConfidence(value: number) {
   return `${Math.round(value * 100)}%`;
+}
+
+function campaignAction(campaign: AggregatedCampaign) {
+  const fatigueRate = campaign.creativeCount > 0 ? campaign.fatiguedCount / campaign.creativeCount : 0;
+
+  if (fatigueRate >= 0.35) {
+    return {
+      label: "Rotate",
+      tone: "rotate",
+      reason: "High fatigue concentration",
+    };
+  }
+
+  if (campaign.roas >= 4 && campaign.ctr >= 0.006) {
+    return {
+      label: "Scale",
+      tone: "scale",
+      reason: "Efficient ROAS and strong attention",
+    };
+  }
+
+  return {
+    label: "Test",
+    tone: "test",
+    reason: "Needs a sharper creative iteration",
+  };
 }
 
 function getOptions(values: string[]) {
@@ -160,6 +200,62 @@ function RiskCard({
   );
 }
 
+function CampaignGroupCard({
+  campaign,
+  onSelect,
+}: {
+  campaign: AggregatedCampaign;
+  onSelect: () => void;
+}) {
+  const fatigueRate = campaign.creativeCount > 0 ? campaign.fatiguedCount / campaign.creativeCount : 0;
+  const action = campaignAction(campaign);
+
+  return (
+    <article className="campaign-card">
+      <div className="campaign-asset">
+        <img src={`/api/assets/${campaign.topCreative.assetFile}`} alt={campaign.topCreative.headline} />
+      </div>
+      <div className="campaign-body">
+        <div className="pill-row">
+          <span className="pill strong">{campaign.campaignId}</span>
+          <span className="pill">{campaign.advertiser}</span>
+          <span className="pill">{campaign.formats.join(", ")}</span>
+        </div>
+        <div className={`campaign-decision ${action.tone}`}>
+          <strong>{action.label}</strong>
+          <span>{action.reason}</span>
+        </div>
+        <h3>{campaign.appName}</h3>
+        <p>
+          Top creative: {campaign.topCreative.headline}. {campaign.creativeCount} creatives across{" "}
+          {campaign.countries.join(", ")} and {campaign.oses.join(", ")}.
+        </p>
+        <dl>
+          <div>
+            <dt>Spend</dt>
+            <dd>{formatMoney(campaign.spendUsd)}</dd>
+          </div>
+          <div>
+            <dt>ROAS</dt>
+            <dd>{campaign.roas.toFixed(2)}x</dd>
+          </div>
+          <div>
+            <dt>CTR</dt>
+            <dd>{formatPct(campaign.ctr)}</dd>
+          </div>
+          <div>
+            <dt>Fatigue</dt>
+            <dd>{formatPct(fatigueRate)}</dd>
+          </div>
+        </dl>
+        <button type="button" onClick={onSelect}>
+          Open campaign
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export function Dashboard({ data }: DashboardProps) {
   const [filters, setFilters] = useState<Filters>({
     advertiser: "All",
@@ -172,6 +268,7 @@ export function Dashboard({ data }: DashboardProps) {
   const [copilotQuestion, setCopilotQuestion] = useState(
     "Which creative should I scale this week, and what should I rotate?",
   );
+  const [campaignSort, setCampaignSort] = useState<CampaignSort>("roas");
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string>("");
 
@@ -194,6 +291,103 @@ export function Dashboard({ data }: DashboardProps) {
       ) ?? data.defaultMarket
     );
   }, [data.defaultMarket, data.markets, filters]);
+
+  const groupedCampaigns = useMemo(() => {
+    const campaigns = new Map<
+      string,
+      AggregatedCampaign & {
+        creativeIds: Set<string>;
+        fatiguedIds: Set<string>;
+      }
+    >();
+
+    for (const group of data.campaignGroups) {
+      if (filters.advertiser !== "All" && group.advertiser !== filters.advertiser) {
+        continue;
+      }
+      if (filters.campaignId !== "All" && group.campaignLabel !== filters.campaignId) {
+        continue;
+      }
+      if (filters.country !== "All" && group.country !== filters.country) {
+        continue;
+      }
+      if (filters.os !== "All" && group.os !== filters.os) {
+        continue;
+      }
+      if (filters.format !== "All" && group.format !== filters.format) {
+        continue;
+      }
+
+      const current = campaigns.get(group.campaignId) ?? {
+        ...group,
+        spendUsd: 0,
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        revenueUsd: 0,
+        creativeCount: 0,
+        fatiguedCount: 0,
+        ctr: 0,
+        cvr: 0,
+        roas: 0,
+        countries: [],
+        oses: [],
+        formats: [],
+        creativeIds: new Set<string>(),
+        fatiguedIds: new Set<string>(),
+      };
+
+      current.spendUsd += group.spendUsd;
+      current.impressions += group.impressions;
+      current.clicks += group.clicks;
+      current.conversions += group.conversions;
+      current.revenueUsd += group.revenueUsd;
+      for (const creativeId of group.creativeIds) {
+        current.creativeIds.add(creativeId);
+      }
+      for (const creativeId of group.fatiguedCreativeIds) {
+        current.fatiguedIds.add(creativeId);
+      }
+      current.countries = [...new Set([...current.countries, group.country])].sort();
+      current.oses = [...new Set([...current.oses, group.os])].sort();
+      current.formats = [...new Set([...current.formats, group.format])].sort();
+
+      const currentTopScore = current.topCreative.perfScore * current.roas;
+      const groupTopScore = group.topCreative.perfScore * group.roas;
+      if (groupTopScore > currentTopScore) {
+        current.topCreative = group.topCreative;
+      }
+
+      campaigns.set(group.campaignId, current);
+    }
+
+    const ranked = [...campaigns.values()]
+      .map(({ creativeIds, fatiguedIds, ...campaign }) => ({
+        ...campaign,
+        creativeCount: creativeIds.size,
+        fatiguedCount: fatiguedIds.size,
+        ctr: campaign.clicks / Math.max(campaign.impressions, 1),
+        cvr: campaign.conversions / Math.max(campaign.clicks, 1),
+        roas: campaign.revenueUsd / Math.max(campaign.spendUsd, 1),
+      }))
+      .sort((left, right) => {
+        if (campaignSort === "spend") {
+          return right.spendUsd - left.spendUsd;
+        }
+        if (campaignSort === "ctr") {
+          return right.ctr - left.ctr;
+        }
+        if (campaignSort === "fatigue") {
+          const rightFatigue = right.creativeCount > 0 ? right.fatiguedCount / right.creativeCount : 0;
+          const leftFatigue = left.creativeCount > 0 ? left.fatiguedCount / left.creativeCount : 0;
+          return rightFatigue - leftFatigue;
+        }
+        return right.roas - left.roas;
+      })
+      .slice(0, 6);
+
+    return ranked;
+  }, [campaignSort, data.campaignGroups, filters]);
 
   async function askCopilot(question?: string) {
     setLoadingAi(true);
@@ -321,6 +515,57 @@ export function Dashboard({ data }: DashboardProps) {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className="board">
+        <div className="board-header">
+          <div>
+            <span className="eyebrow">Group by campaign</span>
+            <h2>Campaign performance comparison</h2>
+          </div>
+          <div className="campaign-toolbar">
+            <div className="segmented-control" aria-label="Sort campaign groups">
+              {[
+                ["roas", "ROAS"],
+                ["spend", "Spend"],
+                ["ctr", "CTR"],
+                ["fatigue", "Fatigue"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={campaignSort === value ? "active" : ""}
+                  onClick={() => setCampaignSort(value as CampaignSort)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="campaign-count">
+              <span>Campaign groups</span>
+              <strong>{groupedCampaigns.length}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="campaign-grid">
+          {groupedCampaigns.length > 0 ? (
+            groupedCampaigns.map((campaign) => (
+              <CampaignGroupCard
+                key={campaign.campaignId}
+                campaign={campaign}
+                onSelect={() =>
+                  setFilters((current) => ({
+                    ...current,
+                    advertiser: campaign.advertiser,
+                    campaignId: campaign.campaignLabel,
+                  }))
+                }
+              />
+            ))
+          ) : (
+            <EmptyState label="No campaign groups match these filters." />
+          )}
+        </div>
       </section>
 
       <section className="board">

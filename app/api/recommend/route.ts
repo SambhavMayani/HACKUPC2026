@@ -37,6 +37,42 @@ export async function POST(request: Request) {
   }
 
   const userQuestion = body.question?.trim();
+  const campaignGroups = data.campaignGroups
+    .filter((group) => {
+      if (body.advertiser !== "All" && group.advertiser !== body.advertiser) {
+        return false;
+      }
+      if (body.campaignId !== "All" && group.campaignLabel !== body.campaignId) {
+        return false;
+      }
+      if (body.country !== "All" && group.country !== body.country) {
+        return false;
+      }
+      if (body.os !== "All" && group.os !== body.os) {
+        return false;
+      }
+      if (body.format !== "All" && group.format !== body.format) {
+        return false;
+      }
+      return true;
+    })
+    .sort((left, right) => right.roas - left.roas)
+    .slice(0, 8)
+    .map((group) => ({
+      campaignId: group.campaignId,
+      appName: group.appName,
+      advertiser: group.advertiser,
+      country: group.country,
+      os: group.os,
+      format: group.format,
+      creativeCount: group.creativeCount,
+      fatiguedCount: group.fatiguedCount,
+      spendUsd: group.spendUsd,
+      ctr: group.ctr,
+      cvr: group.cvr,
+      roas: group.roas,
+      topCreative: group.topCreative,
+    }));
   const prompt = [
     "You are an explainable creative strategist for mobile advertising.",
     "You will receive a summarized market slice from a Creative Intelligence dashboard.",
@@ -47,8 +83,9 @@ export async function POST(request: Request) {
       ? "Use 3-6 bullets. Tie every recommendation to a visible data signal. If the question asks for an action, include Scale, Rotate, or Test language."
       : "Format exactly as Markdown with these sections:\n## What is winning\n## What feels repetitive or tired\n## What to test next\nEach section must have 2-4 bullets.",
     "Be specific, practical, and explainable. Do not invent creatives or metrics that are not in the data.",
+    "The data includes campaign-level grouped performance for answering campaign comparison questions.",
     "Here is the data:",
-    JSON.stringify(market, null, 2),
+    JSON.stringify({ market, campaignGroups }, null, 2),
   ].join("\n\n");
 
   const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {

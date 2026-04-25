@@ -131,6 +131,34 @@ type ActionItem = {
   confidence: number;
 };
 
+export type CampaignGroup = {
+  campaignId: string;
+  campaignLabel: string;
+  advertiser: string;
+  appName: string;
+  country: string;
+  os: string;
+  format: string;
+  creativeIds: string[];
+  fatiguedCreativeIds: string[];
+  creativeCount: number;
+  fatiguedCount: number;
+  spendUsd: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  revenueUsd: number;
+  ctr: number;
+  cvr: number;
+  roas: number;
+  topCreative: {
+    creativeId: string;
+    headline: string;
+    assetFile: string;
+    perfScore: number;
+  };
+};
+
 export type MarketInsight = {
   key: {
     advertiser: string;
@@ -202,6 +230,7 @@ export type DashboardData = {
   };
   markets: MarketInsight[];
   defaultMarket: MarketInsight;
+  campaignGroups: CampaignGroup[];
 };
 
 let cachedData: Promise<DashboardData> | null = null;
@@ -541,6 +570,107 @@ function buildMarketInsight(
   } satisfies MarketInsight;
 }
 
+function buildCampaignGroups(
+  slices: AggregateSlice[],
+  creativesById: Map<string, CreativeRecord>,
+  campaignsById: Map<string, CampaignRow>,
+) {
+  const groups = new Map<
+    string,
+    {
+      slices: AggregateSlice[];
+      creativeIds: Set<string>;
+      fatiguedIds: Set<string>;
+      best: { creative: CreativeRecord; score: number } | null;
+      totals: {
+        spendUsd: number;
+        impressions: number;
+        clicks: number;
+        conversions: number;
+        revenueUsd: number;
+      };
+    }
+  >();
+
+  for (const slice of slices) {
+    const creative = creativesById.get(slice.creativeId);
+
+    if (!creative) {
+      continue;
+    }
+
+    const key = [slice.campaignId, slice.country, slice.os, slice.format].join("::");
+    const group = groups.get(key) ?? {
+      slices: [],
+      creativeIds: new Set<string>(),
+      fatiguedIds: new Set<string>(),
+      best: null,
+      totals: { spendUsd: 0, impressions: 0, clicks: 0, conversions: 0, revenueUsd: 0 },
+    };
+    const ctr = slice.clicks / Math.max(slice.impressions, 1);
+    const cvr = slice.conversions / Math.max(slice.clicks, 1);
+    const roas = slice.revenueUsd / Math.max(slice.spendUsd, 1);
+    const score = ctr * 0.35 + cvr * 0.3 + Math.min(roas / 10, 1) * 0.2 + creative.perfScore * 0.15;
+
+    group.slices.push(slice);
+    group.creativeIds.add(slice.creativeId);
+    if (creative.status === "fatigued" || creative.ctrDecayPct < -0.15) {
+      group.fatiguedIds.add(slice.creativeId);
+    }
+    if (!group.best || score > group.best.score) {
+      group.best = { creative, score };
+    }
+    group.totals.spendUsd += slice.spendUsd;
+    group.totals.impressions += slice.impressions;
+    group.totals.clicks += slice.clicks;
+    group.totals.conversions += slice.conversions;
+    group.totals.revenueUsd += slice.revenueUsd;
+    groups.set(key, group);
+  }
+
+  return [...groups.entries()]
+    .map(([key, group]) => {
+      const [campaignId, country, os, format] = key.split("::");
+      const firstSlice = group.slices[0];
+      const campaign = campaignsById.get(campaignId);
+      const topCreative = group.best?.creative;
+
+      if (!firstSlice || !topCreative) {
+        return null;
+      }
+
+      return {
+        campaignId,
+        campaignLabel: `${campaignId} - ${campaign?.app_name ?? firstSlice.appName}`,
+        advertiser: campaign?.advertiser_name ?? firstSlice.advertiser,
+        appName: campaign?.app_name ?? firstSlice.appName,
+        country,
+        os,
+        format,
+        creativeIds: [...group.creativeIds].sort(),
+        fatiguedCreativeIds: [...group.fatiguedIds].sort(),
+        creativeCount: group.creativeIds.size,
+        fatiguedCount: group.fatiguedIds.size,
+        spendUsd: group.totals.spendUsd,
+        impressions: group.totals.impressions,
+        clicks: group.totals.clicks,
+        conversions: group.totals.conversions,
+        revenueUsd: group.totals.revenueUsd,
+        ctr: group.totals.clicks / Math.max(group.totals.impressions, 1),
+        cvr: group.totals.conversions / Math.max(group.totals.clicks, 1),
+        roas: group.totals.revenueUsd / Math.max(group.totals.spendUsd, 1),
+        topCreative: {
+          creativeId: topCreative.creativeId,
+          headline: topCreative.headline,
+          assetFile: topCreative.assetFile,
+          perfScore: topCreative.perfScore,
+        },
+      } satisfies CampaignGroup;
+    })
+    .filter((group): group is CampaignGroup => group !== null)
+    .sort((left, right) => right.roas - left.roas);
+}
+
 function formatMetric(value: number, type: "pct" | "delta") {
   if (type === "pct") {
     return `${(value * 100).toFixed(2)}%`;
@@ -634,6 +764,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         },
         markets,
         defaultMarket,
+        campaignGroups: buildCampaignGroups(slices, creativesById, campaignsById),
       };
     })();
   }

@@ -147,8 +147,10 @@ pre {
 
 .hero-metrics span,
 .mini-stats span,
+.campaign-count span,
 .filter span,
 .creative-copy dt,
+.campaign-body dt,
 .risk-card dt,
 .test-meta span {
   display: block;
@@ -159,7 +161,8 @@ pre {
 }
 
 .hero-metrics strong,
-.mini-stats strong {
+.mini-stats strong,
+.campaign-count strong {
   display: block;
   margin-top: 8px;
   font-size: 1.9rem;
@@ -235,6 +238,39 @@ pre {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-end;
+}
+
+.campaign-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.segmented-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(161, 188, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.segmented-control button {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.segmented-control button.active {
+  background: var(--text);
+  color: var(--ink);
 }
 
 .action-strip {
@@ -321,6 +357,119 @@ pre {
 .creative-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 18px;
+}
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.campaign-count {
+  min-width: 160px;
+  padding: 16px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(161, 188, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.campaign-card {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.campaign-asset {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.campaign-asset img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.campaign-body {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+}
+
+.campaign-decision {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(161, 188, 255, 0.14);
+}
+
+.campaign-decision strong {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+}
+
+.campaign-decision span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.campaign-decision.scale {
+  background: rgba(126, 242, 167, 0.08);
+  border-color: rgba(126, 242, 167, 0.24);
+}
+
+.campaign-decision.rotate {
+  background: rgba(255, 189, 112, 0.08);
+  border-color: rgba(255, 189, 112, 0.28);
+}
+
+.campaign-decision.test {
+  background: rgba(102, 229, 255, 0.08);
+  border-color: rgba(102, 229, 255, 0.24);
+}
+
+.campaign-body h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.campaign-body p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.campaign-body dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.campaign-body dd {
+  margin: 5px 0 0;
+  font-size: 1.08rem;
+}
+
+.campaign-body button {
+  width: fit-content;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid rgba(102, 229, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(102, 229, 255, 0.1);
+  color: var(--text);
+  cursor: pointer;
 }
 
 .creative-card {
@@ -478,6 +627,7 @@ pre {
   .recommendation-layout,
   .summary-grid,
   .creative-grid,
+  .campaign-grid,
   .filters-panel,
   .action-strip {
     grid-template-columns: 1fr;
@@ -487,6 +637,11 @@ pre {
   .risk-topline {
     flex-direction: column;
     align-items: start;
+  }
+
+  .campaign-toolbar {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .mini-stats,
@@ -522,8 +677,22 @@ pre {
 
   .mini-stats,
   .hero-metrics,
+  .campaign-card,
   .creative-copy dl,
   .risk-card dl {
     grid-template-columns: 1fr;
+  }
+
+  .campaign-asset img {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  .segmented-control {
+    width: 100%;
+  }
+
+  .segmented-control button {
+    flex: 1;
   }
 }
