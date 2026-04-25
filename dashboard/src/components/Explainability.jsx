@@ -43,13 +43,15 @@ export default function Explainability({ data, insight, benchmark }) {
     return bestOf;
   }, [topPerformers]);
 
-  // Attribute correlations
+  // Attribute correlations — compare top half vs bottom half by perf_score
+  // (using median split instead of status label, since many advertisers have 0 top_performers)
   const attrCorrelations = useMemo(() => {
     const attrs = ['novelty', 'readability', 'brand_visibility', 'clutter', 'motion', 'text_density'];
-    const cs = data.creatives;
+    const cs = [...data.creatives].sort((a, b) => b.perf_score - a.perf_score);
+    const midpoint = Math.floor(cs.length / 2);
+    const top = cs.slice(0, Math.max(midpoint, 1));
+    const rest = cs.slice(midpoint);
     return attrs.map(attr => {
-      const top = cs.filter(c => c.status === 'top_performer');
-      const rest = cs.filter(c => c.status !== 'top_performer');
       const topAvg = top.length > 0 ? top.reduce((s, c) => s + (c[attr] || 0), 0) / top.length : 0;
       const restAvg = rest.length > 0 ? rest.reduce((s, c) => s + (c[attr] || 0), 0) / rest.length : 0;
       return { attr, topAvg, restAvg, diff: topAvg - restAvg, absDiff: Math.abs(topAvg - restAvg) };
@@ -116,7 +118,7 @@ export default function Explainability({ data, insight, benchmark }) {
               </div>
               <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Your Top Performers</div>
+                  <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Your Best Creatives</div>
                   <div className="bar-fill-bg">
                     <div className="bar-fill" style={{ width: `${a.topAvg * 100}%`, background: 'var(--green)' }} />
                   </div>
