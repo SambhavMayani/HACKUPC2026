@@ -1,81 +1,87 @@
 import { useMemo } from 'react';
-import { fmtPct, fmtUSD, fmt, statusLabel, explainPerformance } from '../utils';
+import { fmtPct, fmtUSD, fmt, statusLabel } from '../utils';
 
-export default function Recommendations({ data }) {
+export default function Recommendations({ data, advInsight, benchmark }) {
   const recs = useMemo(() => {
     const list = [];
+    const creatives = data.creatives;
 
-    // SCALE: top performers with room to grow
-    data.creatives
+    // SCALE: top performers with strong ROAS
+    creatives
       .filter(c => c.status === 'top_performer')
       .sort((a, b) => b.roas - a.roas)
       .slice(0, 6)
       .forEach(c => {
+        const potentialRevenue = c.roas * c.spend * 0.5; // estimated gain from 50% budget increase
         list.push({
           action: 'scale',
           creative: c,
           title: `Scale "${c.headline}"`,
-          reason: `ROAS of ${c.roas.toFixed(2)}x with a ${fmtPct(c.ctr)} CTR. This creative is converting efficiently — increase budget allocation to maximize returns.`,
+          reason: `ROAS of ${c.roas.toFixed(2)}x with ${fmtPct(c.ctr)} CTR. Increasing budget by 50% could generate ~${fmtUSD(potentialRevenue)} additional revenue based on current efficiency.`,
           impact: 'high',
+          savingsOrGain: potentialRevenue,
         });
       });
 
-    // PAUSE: underperformers burning budget
-    data.creatives
-      .filter(c => c.status === 'underperformer' && c.spend > 10000)
+    // PAUSE: underperformers wasting budget
+    creatives
+      .filter(c => c.status === 'underperformer' && c.spend > 5000)
       .sort((a, b) => a.roas - b.roas)
-      .slice(0, 4)
+      .slice(0, 6)
       .forEach(c => {
+        const wasted = c.spend - c.revenue;
         list.push({
           action: 'pause',
           creative: c,
           title: `Pause "${c.headline}"`,
-          reason: `Spent ${fmtUSD(c.spend)} with only ${c.roas.toFixed(2)}x ROAS. This creative is underperforming — reallocate budget to higher performers.`,
+          reason: `Spent ${fmtUSD(c.spend)} but generated only ${fmtUSD(c.revenue)} — a net loss of ${fmtUSD(Math.max(0, wasted))}. Reallocate this budget to top performers.`,
           impact: 'high',
+          savingsOrGain: Math.max(0, wasted),
         });
       });
 
-    // REFRESH: fatigued creatives that were once good
-    data.creatives
-      .filter(c => c.status === 'fatigued' && c.first_7d_ctr > 0.005)
+    // REFRESH: fatigued creatives that showed strong initial performance
+    creatives
+      .filter(c => c.status === 'fatigued' && c.first_7d_ctr > 0.004)
       .sort((a, b) => b.first_7d_ctr - a.first_7d_ctr)
-      .slice(0, 4)
+      .slice(0, 5)
       .forEach(c => {
         list.push({
           action: 'refresh',
           creative: c,
           title: `Refresh "${c.headline}"`,
-          reason: `Strong initial CTR of ${fmtPct(c.first_7d_ctr)} dropped to ${fmtPct(c.last_7d_ctr)} after day ${c.fatigue_day}. The concept works — try a visual refresh with new colors or copy.`,
+          reason: `Initial CTR of ${fmtPct(c.first_7d_ctr)} dropped to ${fmtPct(c.last_7d_ctr)} after day ${c.fatigue_day}. The concept resonated — try a visual refresh with new imagery, color scheme, or updated copy.`,
           impact: 'medium',
+          savingsOrGain: 0,
         });
       });
 
-    // TEST: suggest new creative based on top-performing traits
-    const topFormats = {};
-    const topThemes = {};
-    data.creatives.filter(c => c.status === 'top_performer').forEach(c => {
-      topFormats[c.format] = (topFormats[c.format] || 0) + 1;
-      topThemes[c.theme] = (topThemes[c.theme] || 0) + 1;
+    // TEST: suggest untried format+theme combos based on top performers
+    const topTraits = {};
+    creatives.filter(c => c.status === 'top_performer').forEach(c => {
+      const key = `${c.format}|${c.theme}`;
+      topTraits[key] = (topTraits[key] || 0) + 1;
     });
-    const bestFormat = Object.entries(topFormats).sort((a, b) => b[1] - a[1])[0];
-    const bestTheme = Object.entries(topThemes).sort((a, b) => b[1] - a[1])[0];
+    const bestCombos = Object.entries(topTraits).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-    if (bestFormat && bestTheme) {
-      // Find campaigns that don't have this winning combo
+    // Find campaigns missing these winning combos
+    for (const [combo] of bestCombos) {
+      const [bestFormat, bestTheme] = combo.split('|');
       const campaignsWithCombo = new Set(
-        data.creatives
-          .filter(c => c.format === bestFormat[0] && c.theme === bestTheme[0])
+        creatives
+          .filter(c => c.format === bestFormat && c.theme === bestTheme)
           .map(c => c.campaign_id)
       );
-      const campaignsWithout = data.campaigns.filter(c => !campaignsWithCombo.has(c.id));
-      campaignsWithout.slice(0, 3).forEach(camp => {
+      const missing = data.campaigns.filter(c => !campaignsWithCombo.has(c.id));
+      missing.slice(0, 2).forEach(camp => {
         list.push({
           action: 'test',
           creative: null,
           campaign: camp,
-          title: `Test ${bestFormat[0]} + ${bestTheme[0]} in ${camp.app}`,
-          reason: `The combination of "${bestFormat[0]}" format with "${bestTheme[0]}" theme drives top performance. Campaign "${camp.app}" hasn't tried this combo yet.`,
+          title: `Test ${bestFormat} + ${bestTheme} in ${camp.app}`,
+          reason: `"${bestFormat}" format + "${bestTheme}" theme drives the best performance scores across your portfolio. Campaign "${camp.app}" hasn't tried this winning combination yet.`,
           impact: 'medium',
+          savingsOrGain: 0,
         });
       });
     }
@@ -89,6 +95,10 @@ export default function Recommendations({ data }) {
   const actionIcons = { scale: '🚀', pause: '⏸️', refresh: '🔄', test: '🧪' };
   const actionLabels = { scale: 'Scale Up', pause: 'Pause', refresh: 'Refresh', test: 'Test New' };
 
+  // Calculate total potential impact
+  const totalSavings = recs.filter(r => r.action === 'pause').reduce((s, r) => s + (r.savingsOrGain || 0), 0);
+  const totalGain = recs.filter(r => r.action === 'scale').reduce((s, r) => s + (r.savingsOrGain || 0), 0);
+
   return (
     <div>
       <div className="page-header">
@@ -98,41 +108,61 @@ export default function Recommendations({ data }) {
 
       <div className="stats-row">
         <div className="stat-card">
-          <div className="stat-label">Scale Recommendations</div>
+          <div className="stat-label">Scale Opportunities</div>
           <div className="stat-value" style={{ color: 'var(--green)' }}>{recs.filter(r => r.action === 'scale').length}</div>
+          <div className="stat-change positive">potential +{fmtUSD(totalGain)} revenue</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Pause Recommendations</div>
+          <div className="stat-label">Pause & Save</div>
           <div className="stat-value" style={{ color: 'var(--red)' }}>{recs.filter(r => r.action === 'pause').length}</div>
+          <div className="stat-change negative">{fmtUSD(totalSavings)} recoverable</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Refresh Recommendations</div>
+          <div className="stat-label">Refresh Candidates</div>
           <div className="stat-value" style={{ color: 'var(--yellow)' }}>{recs.filter(r => r.action === 'refresh').length}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Test Recommendations</div>
+          <div className="stat-label">New Tests</div>
           <div className="stat-value" style={{ color: 'var(--blue)' }}>{recs.filter(r => r.action === 'test').length}</div>
         </div>
       </div>
 
+      {/* Budget reallocation insight */}
+      {totalSavings > 0 && (
+        <div className="card" style={{ marginBottom: 24, background: 'linear-gradient(135deg, rgba(0,210,160,0.06), rgba(108,92,231,0.06))' }}>
+          <div className="card-header"><h3>💰 Budget Reallocation Opportunity</h3></div>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+            By pausing {recs.filter(r => r.action === 'pause').length} underperforming creatives, you can recover
+            <strong style={{ color: 'var(--green)' }}> {fmtUSD(totalSavings)}</strong> in wasted spend.
+            Redirect this budget to your top {recs.filter(r => r.action === 'scale').length} performers for an estimated
+            <strong style={{ color: 'var(--green)' }}> {fmtUSD(totalGain)}</strong> in additional revenue.
+          </p>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
         {sortedRecs.map((rec, i) => (
           <div key={i} className="rec-card">
-            <div className={`rec-action ${rec.action}`}>
-              {actionIcons[rec.action]} {actionLabels[rec.action]}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div className={`rec-action ${rec.action}`}>
+                {actionIcons[rec.action]} {actionLabels[rec.action]}
+              </div>
+              {rec.impact === 'high' && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>High Impact</span>
+              )}
             </div>
             <h4 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, lineHeight: 1.3 }}>{rec.title}</h4>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 12 }}>{rec.reason}</p>
             {rec.creative && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--bg-secondary)', borderRadius: 8 }}>
                 <img src={`/${rec.creative.asset_file}`} alt="" style={{ width: 56, height: 42, objectFit: 'cover', borderRadius: 4 }} />
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600 }}>{rec.creative.advertiser}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                     {rec.creative.format} · {rec.creative.vertical} · ROAS {rec.creative.roas.toFixed(2)}x
                   </div>
                 </div>
-                <span className={`status-badge ${rec.creative.status}`} style={{ marginLeft: 'auto' }}>
+                <span className={`status-badge ${rec.creative.status}`} style={{ whiteSpace: 'nowrap' }}>
                   {statusLabel(rec.creative.status)}
                 </span>
               </div>
