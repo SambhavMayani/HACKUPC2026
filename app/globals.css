@@ -285,6 +285,57 @@ img {
   font-size: clamp(2rem, 3.2vw, 3.8rem);
 }
 
+.heading-with-info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: #fffdf7;
+  color: var(--green);
+}
+
+.info-button:hover,
+.info-button:focus-visible {
+  background: var(--green);
+  color: #fffdf7;
+}
+
+.info-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  width: min(340px, calc(100vw - 48px));
+  padding: 12px;
+  background: var(--black);
+  color: #fff7e8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px);
+  transition: opacity 150ms ease, transform 150ms ease;
+  z-index: 20;
+}
+
+.info-button:hover .info-tooltip,
+.info-button:focus-visible .info-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .section-heading p {
   max-width: 520px;
   margin: 0;

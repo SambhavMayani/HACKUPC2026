@@ -7,6 +7,7 @@ import {
   CirclePause,
   X,
   FlaskConical,
+  Info,
   Layers3,
   Newspaper,
   RefreshCw,
@@ -1004,7 +1005,15 @@ export function Dashboard({ data }: DashboardProps) {
           <div className="section-heading tight">
             <div>
               <span className="eyebrow">Recommendation engine</span>
-              <h2>Next actions</h2>
+              <div className="heading-with-info">
+                <h2>Next actions</h2>
+                <button type="button" className="info-button" aria-label="How next actions are selected">
+                  <Info size={18} />
+                  <span className="info-tooltip" role="tooltip">
+                    Scale means strong volume, score, and no severe fatigue. Refresh means the creative is working but performance is fading. Pause means spend is high and results are weak. Test next means useful ideas that are not clear scale, refresh, or pause candidates. If none match, this slice has no strong candidate for that action.
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
           <div className="action-list">
