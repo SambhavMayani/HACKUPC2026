@@ -5,6 +5,7 @@ import {
   Bot,
   ChevronRight,
   CirclePause,
+  X,
   FlaskConical,
   Layers3,
   RefreshCw,
@@ -13,7 +14,7 @@ import {
   ShieldAlert,
   TrendingDown,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Creative, DashboardData, SegmentMetrics } from "@/lib/creative-intelligence";
 
 type DashboardProps = {
@@ -52,6 +53,15 @@ type TraitInsight = {
   lift: number;
   count: number;
   explanation: string;
+};
+
+type PreviewCreative = {
+  assetFile: string;
+  headline: string;
+  subhead: string;
+  advertiser: string;
+  appName: string;
+  format: string;
 };
 
 const initialFilters: Filters = {
@@ -445,15 +455,28 @@ function ActionBadge({ action }: { action: RankedCreative["action"] }) {
   );
 }
 
-function CreativeCard({ item, rank }: { item: RankedCreative; rank: number }) {
+function CreativeCard({
+  item,
+  rank,
+  onPreview,
+}: {
+  item: RankedCreative;
+  rank: number;
+  onPreview: (creative: PreviewCreative) => void;
+}) {
   const { creative, metrics } = item;
 
   return (
     <article className="creative-card">
-      <div className="creative-media">
+      <button
+        type="button"
+        className="creative-media preview-trigger"
+        onClick={() => onPreview(creative)}
+        aria-label={`Preview ${creative.headline}`}
+      >
         <img src={`/api/assets/${creative.assetFile}`} alt={creative.headline} />
         <span className="rank-badge">#{rank}</span>
-      </div>
+      </button>
       <div className="creative-body">
         <div className="card-kicker">
           <ActionBadge action={item.action} />
@@ -510,12 +533,26 @@ function RiskCard({ item }: { item: RankedCreative }) {
   );
 }
 
-function ClusterCard({ cluster }: { cluster: Cluster }) {
+function ClusterCard({
+  cluster,
+  onPreview,
+}: {
+  cluster: Cluster;
+  onPreview: (creative: PreviewCreative) => void;
+}) {
   return (
     <article className="cluster-card">
       <div className="cluster-thumbs">
         {cluster.creatives.slice(0, 4).map((item) => (
-          <img key={item.creative.creativeId} src={`/api/assets/${item.creative.assetFile}`} alt={item.creative.headline} />
+          <button
+            type="button"
+            className="cluster-thumb preview-trigger"
+            key={item.creative.creativeId}
+            onClick={() => onPreview(item.creative)}
+            aria-label={`Preview ${item.creative.headline}`}
+          >
+            <img src={`/api/assets/${item.creative.assetFile}`} alt={item.creative.headline} />
+          </button>
         ))}
       </div>
       <div className="cluster-content">
@@ -534,19 +571,152 @@ function ClusterCard({ cluster }: { cluster: Cluster }) {
   );
 }
 
-function markdownToBlocks(markdown: string) {
-  return markdown.split("\n").map((line, index) => {
-    if (line.startsWith("### ") || line.startsWith("## ")) {
-      return <h4 key={index}>{line.replace(/^###?\s/, "")}</h4>;
+function CreativePreviewModal({
+  creative,
+  onClose,
+}: {
+  creative: PreviewCreative | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!creative) {
+      return;
     }
-    if (line.trim().startsWith("- ")) {
-      return <li key={index}>{line.trim().slice(2)}</li>;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
     }
-    if (!line.trim()) {
-      return null;
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [creative, onClose]);
+
+  if (!creative) {
+    return null;
+  }
+
+  return (
+    <div className="preview-overlay" role="dialog" aria-modal="true" aria-label={`Preview ${creative.headline}`}>
+      <button type="button" className="preview-backdrop" onClick={onClose} aria-label="Close preview" />
+      <div className="preview-dialog">
+        <div className="preview-header">
+          <div>
+            <span>{creative.advertiser} / {creative.appName}</span>
+            <h3>{creative.headline}</h3>
+          </div>
+          <button type="button" className="preview-close" onClick={onClose} aria-label="Close preview">
+            <X size={22} />
+          </button>
+        </div>
+        <div className="preview-image-wrap">
+          <img src={`/api/assets/${creative.assetFile}`} alt={creative.headline} />
+        </div>
+        <div className="preview-meta">
+          <span>{creative.format}</span>
+          {creative.subhead ? <span>{creative.subhead}</span> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function renderInlineMarkdown(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
     }
-    return <p key={index}>{line}</p>;
+
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={index}>{part.slice(1, -1)}</code>;
+    }
+
+    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (linkMatch) {
+      return (
+        <a key={index} href={linkMatch[2]} target="_blank" rel="noreferrer">
+          {linkMatch[1]}
+        </a>
+      );
+    }
+
+    return part;
   });
+}
+
+function markdownToBlocks(markdown: string) {
+  const blocks: React.ReactNode[] = [];
+  const lines = markdown.split("\n");
+  let listItems: React.ReactNode[] = [];
+  let orderedListItems: React.ReactNode[] = [];
+
+  function flushLists() {
+    if (listItems.length > 0) {
+      blocks.push(<ul key={`ul-${blocks.length}`}>{listItems}</ul>);
+      listItems = [];
+    }
+
+    if (orderedListItems.length > 0) {
+      blocks.push(<ol key={`ol-${blocks.length}`}>{orderedListItems}</ol>);
+      orderedListItems = [];
+    }
+  }
+
+  lines.forEach((rawLine, index) => {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushLists();
+      return;
+    }
+
+    const unorderedMatch = line.match(/^[-*]\s+(.+)$/);
+    if (unorderedMatch) {
+      orderedListItems = [];
+      listItems.push(<li key={`li-${index}`}>{renderInlineMarkdown(unorderedMatch[1])}</li>);
+      return;
+    }
+
+    const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
+    if (orderedMatch) {
+      listItems = [];
+      orderedListItems.push(<li key={`oli-${index}`}>{renderInlineMarkdown(orderedMatch[1])}</li>);
+      return;
+    }
+
+    flushLists();
+
+    if (line.startsWith("### ")) {
+      blocks.push(<h4 key={`h4-${index}`}>{renderInlineMarkdown(line.slice(4))}</h4>);
+      return;
+    }
+
+    if (line.startsWith("## ")) {
+      blocks.push(<h3 key={`h3-${index}`}>{renderInlineMarkdown(line.slice(3))}</h3>);
+      return;
+    }
+
+    if (line.startsWith("# ")) {
+      blocks.push(<h3 key={`h3-${index}`}>{renderInlineMarkdown(line.slice(2))}</h3>);
+      return;
+    }
+
+    blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(line)}</p>);
+  });
+
+  flushLists();
+  return blocks;
 }
 
 export function Dashboard({ data }: DashboardProps) {
@@ -555,6 +725,7 @@ export function Dashboard({ data }: DashboardProps) {
   const [copilotAnswer, setCopilotAnswer] = useState("");
   const [copilotError, setCopilotError] = useState("");
   const [copilotLoading, setCopilotLoading] = useState(false);
+  const [previewCreative, setPreviewCreative] = useState<PreviewCreative | null>(null);
 
   const availableFilters = useMemo(
     () => ({
@@ -750,7 +921,12 @@ export function Dashboard({ data }: DashboardProps) {
         </div>
         <div className="creative-grid">
           {topPerformers.map((item, index) => (
-            <CreativeCard key={item.creative.creativeId} item={item} rank={index + 1} />
+            <CreativeCard
+              key={item.creative.creativeId}
+              item={item}
+              rank={index + 1}
+              onPreview={setPreviewCreative}
+            />
           ))}
         </div>
       </section>
@@ -802,7 +978,7 @@ export function Dashboard({ data }: DashboardProps) {
         </div>
         <div className="cluster-grid">
           {clusters.map((cluster) => (
-            <ClusterCard key={cluster.key} cluster={cluster} />
+            <ClusterCard key={cluster.key} cluster={cluster} onPreview={setPreviewCreative} />
           ))}
         </div>
       </section>
@@ -845,6 +1021,7 @@ export function Dashboard({ data }: DashboardProps) {
           {copilotAnswer ? <div className="copilot-answer">{markdownToBlocks(copilotAnswer)}</div> : null}
         </article>
       </section>
+      <CreativePreviewModal creative={previewCreative} onClose={() => setPreviewCreative(null)} />
     </main>
   );
 }
